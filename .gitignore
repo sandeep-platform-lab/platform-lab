@@ -1,0 +1,20 @@
+# Secrets
+.env
+*.pem
+*.key
+cosign.key
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+
+# Kube / misc
+kubeconfig*
+.DS_Store
+
+# Private notes (never pushed)
+*.local.md

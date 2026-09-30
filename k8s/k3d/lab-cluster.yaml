@@ -1,0 +1,20 @@
+# Local Kubernetes cluster: 1 control-plane + 2 workers, running as Docker containers.
+# Create:  k3d cluster create --config k8s/k3d/lab-cluster.yaml
+# Delete:  k3d cluster delete lab
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: lab
+servers: 1
+agents: 2
+ports:
+  # Ingress (Traefik) reachable on http://localhost:8080
+  - port: 8080:80
+    nodeFilters:
+      - loadbalancer
+options:
+  k3s:
+    extraArgs:
+      - arg: --disable=metrics-server
+        nodeFilters:
+          - server:*

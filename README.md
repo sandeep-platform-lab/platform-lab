@@ -19,8 +19,9 @@ Workplace: Dev Box / Windows 365 · custom images · pools
 
 | Path | Contents |
 |---|---|
-| `app/` | Sample application that the pipeline builds |
+| `app/` | `lab-api`: sample FastAPI service with tests and a non-root Dockerfile |
 | `.github/workflows/` | CI/CD pipelines |
+| `terraform/github/` | Teams, repo permissions and the `main` ruleset as code |
 | `terraform/jfrog/` | Artifactory repos, groups, permissions, Xray policies as code |
 | `terraform/azure/` | AKS, Key Vault, Azure Policy, GitHub OIDC |
 | `k8s/` | Local cluster config, Argo CD apps, Kyverno policies |
@@ -30,7 +31,7 @@ Workplace: Dev Box / Windows 365 · custom images · pools
 ## Roadmap
 
 - [x] Local tooling and Kubernetes (k3d)
-- [ ] GitHub org governance: teams, rulesets, CODEOWNERS
+- [x] GitHub org governance: teams, rulesets, CODEOWNERS
 - [ ] JFrog Artifactory administration as code (repos, permissions, Projects)
 - [ ] Supply-chain pipeline: scans → push → build-info → SBOM → signing
 - [ ] Xray policies, watches and Curation

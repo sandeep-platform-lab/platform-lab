@@ -1,0 +1,9 @@
+# Reviews are requested automatically from the owning team.
+# Later lines win, so the catch-all comes first.
+
+*                    @sandeep-platform-lab/platform-team
+
+/app/                @sandeep-platform-lab/app-team
+/.github/            @sandeep-platform-lab/platform-team
+/terraform/          @sandeep-platform-lab/platform-team
+/.github/CODEOWNERS  @sandeep-platform-lab/platform-team @sandeep-platform-lab/security-team

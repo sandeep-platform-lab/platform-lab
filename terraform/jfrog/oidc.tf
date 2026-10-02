@@ -7,7 +7,12 @@ resource "platform_oidc_configuration" "github" {
   description   = "GitHub Actions in ${var.github_repository}"
   issuer_url    = "https://token.actions.githubusercontent.com"
   provider_type = "GitHub"
+  organization  = split("/", var.github_repository)[0]
   audience      = "jfrog-github"
+
+  # Strict mode: identity mappings must pin claims (we pin the repository), so a workflow in
+  # some other org or repo can never match a mapping by accident.
+  enable_permissive_configuration = false
 }
 
 # Builds on main may push to dev repos.

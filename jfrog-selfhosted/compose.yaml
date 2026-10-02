@@ -1,0 +1,49 @@
+# Self-hosted Artifactory OSS + PostgreSQL, for practising installation and operations.
+# Start:  ./setup.sh && docker compose up -d     UI: http://localhost:8082
+# Stop:   docker compose down        (add -v to wipe all data)
+name: artifactory-oss
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: artifactory
+      POSTGRES_USER: artifactory
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run ./setup.sh first}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U artifactory -d artifactory"]
+      interval: 5s
+      retries: 20
+    restart: unless-stopped
+
+  artifactory:
+    image: releases-docker.jfrog.io/jfrog/artifactory-oss:${ARTIFACTORY_VERSION:-latest}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # JF_<section>_<key> env vars override system.yaml (here: shared.database.*).
+    # Precedence: env vars > system.yaml > defaults.
+    environment:
+      JF_SHARED_DATABASE_TYPE: postgresql
+      JF_SHARED_DATABASE_DRIVER: org.postgresql.Driver
+      JF_SHARED_DATABASE_URL: jdbc:postgresql://postgres:5432/artifactory
+      JF_SHARED_DATABASE_USERNAME: artifactory
+      JF_SHARED_DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      JF_SHARED_NODE_IP: 127.0.0.1
+      EXTRA_JAVA_OPTIONS: -Xms1g -Xmx3g
+    ports:
+      - "8081:8081" # Artifactory service (direct)
+      - "8082:8082" # Router: UI and all APIs
+    volumes:
+      - artifactory:/var/opt/jfrog/artifactory
+    ulimits:
+      nofile:
+        soft: 32000
+        hard: 40000
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  artifactory:

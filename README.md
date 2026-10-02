@@ -22,7 +22,8 @@ Workplace: Dev Box / Windows 365 · custom images · pools
 | `app/` | `lab-api`: sample FastAPI service with tests and a non-root Dockerfile |
 | `.github/workflows/` | CI/CD pipelines |
 | `terraform/github/` | Teams, repo permissions and the `main` ruleset as code |
-| `terraform/jfrog/` | Artifactory repos, groups, permissions, Xray policies as code |
+| `terraform/jfrog/` | JFrog Project, repos, groups, permissions and GitHub OIDC trust as code |
+| `jfrog-selfhosted/` | Artifactory OSS + PostgreSQL in Docker Compose for operations practice |
 | `terraform/azure/` | AKS, Key Vault, Azure Policy, GitHub OIDC |
 | `k8s/` | Local cluster config, Argo CD apps, Kyverno policies |
 | `scripts/` | Helper scripts |
@@ -32,7 +33,7 @@ Workplace: Dev Box / Windows 365 · custom images · pools
 
 - [x] Local tooling and Kubernetes (k3d)
 - [x] GitHub org governance: teams, rulesets, CODEOWNERS
-- [ ] JFrog Artifactory administration as code (repos, permissions, Projects)
+- [x] JFrog Artifactory administration as code (repos, permissions, Projects)
 - [ ] Supply-chain pipeline: scans → push → build-info → SBOM → signing
 - [ ] Xray policies, watches and Curation
 - [ ] Artifactory housekeeping: cleanup policies, AQL, retention

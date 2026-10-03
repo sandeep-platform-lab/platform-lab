@@ -71,14 +71,16 @@ Check in the UI: Projects → **Platform Lab** → repositories, members, roles.
 
 ## Part C – Use it (about 1.5h)
 
-Set a helper variable for the registry host:
+Load `.env` and set a helper variable for the registry host:
 ```bash
+set -a; source .env; set +a      # JFROG_URL, JFROG_USER, JFROG_ACCESS_TOKEN
 REG=${JFROG_URL#https://}
 ```
+`JFROG_USER` must be the user the token was issued to (shown as *Subject* on the token in the UI).
 
 1. **Pull through the remote** (Docker Hub cached in JFrog):
    ```bash
-   echo "$JFROG_ACCESS_TOKEN" | docker login "$REG" -u <your JFrog username> --password-stdin
+   echo "$JFROG_ACCESS_TOKEN" | docker login "$REG" -u "$JFROG_USER" --password-stdin
    docker pull "$REG/lab-docker/library/python:3.14-slim"
    ```
    Find it in the UI under `lab-docker-remote-cache`. Pull it a second time: why is it faster,
@@ -100,9 +102,9 @@ REG=${JFROG_URL#https://}
 4. **Prove least privilege.** Make a short-lived token that only has developer rights, then try to push:
    ```bash
    DEV_TOKEN=$(jf atc --groups lab-developers --expiry 900 | jq -r .access_token)
-   echo "$DEV_TOKEN" | docker login "$REG" -u <your JFrog username> --password-stdin
+   echo "$DEV_TOKEN" | docker login "$REG" -u "$JFROG_USER" --password-stdin
    docker push "$REG/lab-docker/lab-api:manual-1"     # expect: denied
-   echo "$JFROG_ACCESS_TOKEN" | docker login "$REG" -u <your JFrog username> --password-stdin   # back to admin
+   echo "$JFROG_ACCESS_TOKEN" | docker login "$REG" -u "$JFROG_USER" --password-stdin   # back to admin
    ```
 5. **AQL**, the query language behind cleanup and audits:
    ```bash

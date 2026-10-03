@@ -99,13 +99,23 @@ REG=${JFROG_URL#https://}
    deactivate
    ```
    Look at `lab-pypi-remote-cache`: FastAPI and its dependencies are now cached.
-4. **Prove least privilege.** Make a short-lived token that only has developer rights, then try to push:
+4. **Prove least privilege.** Make a short-lived token that only has developer rights, then push a
+   **new** tag. (Re-pushing an existing image proves nothing: identical layers and manifests can be
+   accepted without any write.)
    ```bash
-   DEV_TOKEN=$(jf atc --groups lab-developers --expiry 900 | jq -r .access_token)
-   echo "$DEV_TOKEN" | docker login "$REG" -u "$JFROG_USER" --password-stdin
-   docker push "$REG/lab-docker/lab-api:manual-1"     # expect: denied
+   DEV=$(jf atc --groups lab-developers --expiry 900)
+   echo "$DEV" | jq -r .scope                     # applied-permissions/groups:lab-developers
+   echo "$DEV" | jq -r .access_token | docker login "$REG" -u "$JFROG_USER" --password-stdin
+   TAG="$REG/lab-docker/lab-api:devtest-$(date +%s)"
+   docker tag lab-api:dev "$TAG" && docker push "$TAG"      # expect: denied
    echo "$JFROG_ACCESS_TOKEN" | docker login "$REG" -u "$JFROG_USER" --password-stdin   # back to admin
    ```
+   **Lesson learned in this lab:** the first version of `project.tf` gave `lab-developers` the
+   built-in project role *Developer*, which includes DEPLOY and DELETE/OVERWRITE on all DEV repos.
+   Effective permissions are the **union** of global permissions and project roles, so developers
+   could push despite `access.tf`. Fixed with a custom `Reader` role. Always test permissions
+   with a scoped token; never trust the config alone.
+
 5. **AQL**, the query language behind cleanup and audits:
    ```bash
    jf rt curl -XPOST /api/search/aql -H "Content-Type: text/plain" \

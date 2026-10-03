@@ -14,20 +14,20 @@ resource "project_project" "lab" {
     index_resources  = true
   }
 
-  # Repos and groups are attached with their own resources below.
+  # Groups are attached with their own resources below; repos set project_key themselves.
   use_project_repository_resource = true
   use_project_group_resource      = true
 }
 
-resource "project_repository" "this" {
-  for_each = merge(
-    { for k, v in local.local_repos : "local-${k}" => v },
-    { for k, v in local.remote_repos : "remote-${k}" => v },
-    { for k, v in local.virtual_repos : "virtual-${k}" => v },
-  )
+# Repos join the project through project_key on each repository (repositories.tf).
+# project_repository was removed: it fought with the repo resources over project_key.
+# "removed" forgets it from state WITHOUT detaching the repos from the project.
+removed {
+  from = project_repository.this
 
-  project_key = project_project.lab.key
-  key         = each.value
+  lifecycle {
+    destroy = false
+  }
 }
 
 resource "project_group" "admins" {
@@ -36,8 +36,25 @@ resource "project_group" "admins" {
   roles       = ["Project Admin"]
 }
 
+# Built-in project roles are broad: "Developer" includes DEPLOY and DELETE/OVERWRITE on every
+# DEV repo. Effective rights are the UNION of global permissions and project roles, so that role
+# silently let developers push. This custom role keeps them read-only, as access.tf intends.
+resource "project_role" "reader" {
+  project_key  = project_project.lab.key
+  name         = "Reader"
+  type         = "CUSTOM"
+  environments = ["DEV", "PROD"]
+  actions = [
+    "READ_REPOSITORY",
+    "ANNOTATE_REPOSITORY",
+    "READ_BUILD",
+    "ANNOTATE_BUILD",
+    "READ_RELEASE_BUNDLE",
+  ]
+}
+
 resource "project_group" "developers" {
   project_key = project_project.lab.key
   name        = platform_group.this["${local.p}-developers"].name
-  roles       = ["Developer"]
+  roles       = [project_role.reader.name]
 }

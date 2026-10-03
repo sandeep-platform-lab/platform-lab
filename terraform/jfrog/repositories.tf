@@ -10,6 +10,7 @@ locals {
 
 resource "artifactory_local_docker_v2_repository" "dev" {
   key                   = "${local.p}-docker-dev-local"
+  project_key           = project_project.lab.key
   description           = "Images built by CI. Untested."
   max_unique_tags       = 20 # housekeeping: only the newest 20 tags per image survive
   tag_retention         = 1
@@ -20,6 +21,7 @@ resource "artifactory_local_docker_v2_repository" "dev" {
 
 resource "artifactory_local_docker_v2_repository" "prod" {
   key                   = "${local.p}-docker-prod-local"
+  project_key           = project_project.lab.key
   description           = "Images promoted after passing scans. Nobody pushes here directly."
   block_pushing_schema1 = true
   xray_index            = true
@@ -28,6 +30,7 @@ resource "artifactory_local_docker_v2_repository" "prod" {
 
 resource "artifactory_remote_docker_repository" "dockerhub" {
   key                           = "${local.p}-docker-remote"
+  project_key                   = project_project.lab.key
   description                   = "Proxy and cache of Docker Hub"
   url                           = "https://registry-1.docker.io/"
   enable_token_authentication   = true
@@ -39,6 +42,7 @@ resource "artifactory_remote_docker_repository" "dockerhub" {
 
 resource "artifactory_virtual_docker_repository" "docker" {
   key                     = "${local.p}-docker"
+  project_key             = project_project.lab.key
   description             = "Single Docker endpoint for builds: our dev images first, then Docker Hub"
   repositories            = [artifactory_local_docker_v2_repository.dev.key, artifactory_remote_docker_repository.dockerhub.key]
   default_deployment_repo = artifactory_local_docker_v2_repository.dev.key
@@ -49,6 +53,7 @@ resource "artifactory_virtual_docker_repository" "docker" {
 
 resource "artifactory_local_pypi_repository" "local" {
   key                  = "${local.p}-pypi-local"
+  project_key          = project_project.lab.key
   description          = "Internal Python packages"
   xray_index           = true
   project_environments = ["DEV"]
@@ -56,6 +61,7 @@ resource "artifactory_local_pypi_repository" "local" {
 
 resource "artifactory_remote_pypi_repository" "pypi" {
   key                  = "${local.p}-pypi-remote"
+  project_key          = project_project.lab.key
   description          = "Proxy and cache of pypi.org"
   url                  = "https://files.pythonhosted.org"
   pypi_registry_url    = "https://pypi.org"
@@ -65,6 +71,7 @@ resource "artifactory_remote_pypi_repository" "pypi" {
 
 resource "artifactory_virtual_pypi_repository" "pypi" {
   key                     = "${local.p}-pypi"
+  project_key             = project_project.lab.key
   description             = "Single pip index: internal packages first, then pypi.org"
   repositories            = [artifactory_local_pypi_repository.local.key, artifactory_remote_pypi_repository.pypi.key]
   default_deployment_repo = artifactory_local_pypi_repository.local.key
@@ -75,6 +82,7 @@ resource "artifactory_virtual_pypi_repository" "pypi" {
 
 resource "artifactory_local_generic_repository" "evidence" {
   key                  = "${local.p}-generic-evidence-local"
+  project_key          = project_project.lab.key
   description          = "SBOMs, scan reports and other build evidence"
   xray_index           = true
   project_environments = ["DEV"]

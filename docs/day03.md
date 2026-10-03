@@ -17,7 +17,7 @@ Time: 5–6h. Part A setup, Part B Terraform, Part C using it, Part D self-hoste
 2. Put it in the git-ignored `.env` at the repo root (`JFROG_ACCESS_TOKEN=...`), then load it:
    ```bash
    cd ~/workspace
-   set -a; source .env; set +a
+   set -a; source ~/workspace/.env; set +a
    jf config add lab --url "$JFROG_URL" --access-token "$JFROG_ACCESS_TOKEN" --interactive=false
    jf rt ping            # expect: OK
    ```
@@ -73,7 +73,7 @@ Check in the UI: Projects → **Platform Lab** → repositories, members, roles.
 
 Load `.env` and set a helper variable for the registry host:
 ```bash
-set -a; source .env; set +a      # JFROG_URL, JFROG_USER, JFROG_ACCESS_TOKEN
+set -a; source ~/workspace/.env; set +a      # JFROG_URL, JFROG_USER, JFROG_ACCESS_TOKEN
 REG=${JFROG_URL#https://}
 ```
 `JFROG_USER` must be the user the token was issued to (shown as *Subject* on the token in the UI).

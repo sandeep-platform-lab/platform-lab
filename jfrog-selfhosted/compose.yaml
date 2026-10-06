@@ -19,7 +19,7 @@ services:
     restart: unless-stopped
 
   artifactory:
-    image: releases-docker.jfrog.io/jfrog/artifactory-oss:${ARTIFACTORY_VERSION:-7.161.15}
+    image: releases-docker.jfrog.io/jfrog/artifactory-oss:${ARTIFACTORY_VERSION:-7.161.26}
     depends_on:
       postgres:
         condition: service_healthy

@@ -21,3 +21,8 @@ kubeconfig*
 
 # Local backups (self-hosted Artifactory)
 jfrog-selfhosted/backup/
+
+# Scanner caches and outputs
+.trivycache/
+sarif/
+sbom.spdx.json

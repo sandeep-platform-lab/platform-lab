@@ -67,7 +67,9 @@ What changed in `app/Dockerfile` today and why:
    `refs/pull/<n>/merge`, not `refs/heads/main`, so priority 1 (`platform-lab-main`) doesn't match
    and priority 2 (`platform-lab-other`) does. Result: a 5-minute token for `lab-ci-readonly`.
    You'll see the other side in Part D, when the `main` run is allowed to push.
-5. Security tab → **Code scanning**: results from Gitleaks, Semgrep and Trivy (if any).
+5. **GitHub** repo → **Security** tab → **Code scanning** → **Tool status**: Gitleaks, Semgrep OSS
+   and Trivy each uploaded an analysis. The alert list shows the default branch, so it's empty until
+   something is found on `main`. Findings on a PR appear as annotations on the PR instead.
 
 ---
 

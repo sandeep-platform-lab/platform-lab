@@ -61,8 +61,13 @@ What changed in `app/Dockerfile` today and why:
 3. Watch the run: `gh run watch`, or the Actions tab.
    - `scan`: all three scanners, results uploaded.
    - `build`: OIDC login, image built and scanned, **nothing published** (it's a PR).
-4. In JFrog, find the OIDC login: Administration → Platform Security → OIDC Integration →
-   `github-actions`. Which identity mapping matched?
+4. In JFrog, open the OIDC setup: Administration → **Authentication** → OIDC (older UIs call this
+   section "Platform Security"; the admin search box also finds "OIDC"). Open `github-actions` and
+   its two identity mappings. Which one matched for the PR run?
+   The UI doesn't log the match, so reason it out: a PR run's `ref` claim is
+   `refs/pull/<n>/merge`, not `refs/heads/main`, so priority 1 (`platform-lab-main`) doesn't match
+   and priority 2 (`platform-lab-other`) does. Result: a 5-minute token for `lab-ci-readonly`.
+   You'll see the other side in Part D, when the `main` run is allowed to push.
 5. Security tab → **Code scanning**: results from Gitleaks, Semgrep and Trivy (if any).
 
 ---

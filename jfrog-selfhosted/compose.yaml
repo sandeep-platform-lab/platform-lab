@@ -32,6 +32,9 @@ services:
       JF_SHARED_DATABASE_USERNAME: artifactory
       JF_SHARED_DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       JF_SHARED_NODE_IP: 127.0.0.1
+      # OSS doesn't ship JFConnect (licence/entitlement service), but it's enabled by default.
+      # The UI then waits minutes for entitlements on every feature check. Turn it off.
+      JF_JFCONNECT_ENABLED: "false"
       EXTRA_JAVA_OPTIONS: -Xms1g -Xmx3g
     ports:
       - "8081:8081" # Artifactory service (direct)

@@ -111,14 +111,16 @@ gh pr close <number> --delete-branch
 2. JFrog UI:
    - **Artifactory → Builds → `lab-api`**: the build-info. Find the git commit, the environment,
      the image layers, and the SBOM as an artifact of the build.
-   - **`lab-docker-dev-local/lab-api`**: tag `1.0.<run>`, plus `sha256-….sig` and `sha256-….att`.
+   - **`lab-docker-dev-local/lab-api`**: tag `1.0.<run number>`, plus `sha256-….sig` and `sha256-….att`.
      Those are the signature and the SBOM attestation, stored next to the image.
    - **`lab-generic-evidence-local/lab-api/<run>/sbom.spdx.json`**
 3. Verify the signature yourself. Anyone with read access can do this; no keys are needed:
    ```bash
    set -a; source ~/workspace/.env; set +a; REG=${JFROG_URL#https://}
    echo "$JFROG_ACCESS_TOKEN" | docker login "$REG" -u "$JFROG_USER" --password-stdin
-   IMG="$REG/lab-docker/lab-api:1.0.<run number>"
+   RUN=$(gh run list -R sandeep-platform-lab/platform-lab --workflow supply-chain.yml --branch main \
+         --status success --limit 1 --json number --jq '.[0].number')
+   IMG="$REG/lab-docker/lab-api:1.0.$RUN"; echo "$IMG"
    cosign verify "$IMG" \
      --certificate-identity "https://github.com/sandeep-platform-lab/platform-lab/.github/workflows/supply-chain.yml@refs/heads/main" \
      --certificate-oidc-issuer https://token.actions.githubusercontent.com | jq '.[0].optional'

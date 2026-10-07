@@ -33,6 +33,7 @@ resource "artifactory_remote_docker_repository" "dockerhub" {
   project_key                   = project_project.lab.key
   description                   = "Proxy and cache of Docker Hub"
   url                           = "https://registry-1.docker.io/"
+  curated                       = var.enable_curation # evaluated by Curation (curation.tf)
   enable_token_authentication   = true
   block_pushing_schema1         = true
   external_dependencies_enabled = false
@@ -64,6 +65,7 @@ resource "artifactory_remote_pypi_repository" "pypi" {
   project_key          = project_project.lab.key
   description          = "Proxy and cache of pypi.org"
   url                  = "https://files.pythonhosted.org"
+  curated              = var.enable_curation # evaluated by Curation (curation.tf)
   pypi_registry_url    = "https://pypi.org"
   xray_index           = true
   project_environments = ["DEV"]

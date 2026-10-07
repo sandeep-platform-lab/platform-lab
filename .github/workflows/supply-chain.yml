@@ -161,6 +161,12 @@ jobs:
           jf rt build-collect-env "$BUILD_NAME" "$BUILD_NUMBER"
           jf rt build-publish "$BUILD_NAME" "$BUILD_NUMBER"
 
+      # Xray evaluates the published build against the lab-builds watch. A fail_build
+      # violation (fixable HIGH/CRITICAL) fails this step, so nothing unapproved gets signed.
+      - name: Xray build scan
+        if: env.PUBLISH == 'true'
+        run: jf build-scan "$BUILD_NAME" "$BUILD_NUMBER" --fail=true --vuln
+
       - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
         if: env.PUBLISH == 'true'
         with:

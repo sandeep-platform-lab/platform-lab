@@ -1,0 +1,10 @@
+name: greet
+on: pull_request
+permissions:
+  contents: read
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print PR title
+        run: echo "${{ github.event.pull_request.title }}"

@@ -14,6 +14,10 @@ terraform {
       source  = "jfrog/project"
       version = ">= 1.9"
     }
+    xray = {
+      source  = "jfrog/xray"
+      version = ">= 3.0"
+    }
   }
 }
 
@@ -21,3 +25,4 @@ terraform {
 provider "artifactory" {}
 provider "platform" {}
 provider "project" {}
+provider "xray" {}

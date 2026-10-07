@@ -63,7 +63,7 @@ resource "platform_permission" "ci_deploy" {
   build = {
     actions = {
       groups = [
-        { name = platform_group.this["${local.p}-ci"].name, permissions = ["READ", "WRITE", "ANNOTATE"] },
+        { name = platform_group.this["${local.p}-ci"].name, permissions = ["READ", "WRITE", "ANNOTATE", "SCAN"] },
         { name = platform_group.this["${local.p}-developers"].name, permissions = ["READ"] },
         { name = platform_group.this["${local.p}-release"].name, permissions = ["READ"] },
       ]

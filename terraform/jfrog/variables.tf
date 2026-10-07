@@ -9,3 +9,9 @@ variable "github_repository" {
   type        = string
   default     = "sandeep-platform-lab/platform-lab"
 }
+
+variable "enable_curation" {
+  description = "Create Curation policies and mark remote repos as curated. Needs a Catalog/Curation entitlement (not part of the free trial)."
+  type        = bool
+  default     = false
+}

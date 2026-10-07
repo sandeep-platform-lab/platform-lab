@@ -39,6 +39,16 @@ resource "github_repository_ruleset" "main" {
         context        = "build-test"
         integration_id = 15368 # GitHub Actions: only Actions can satisfy this check
       }
+
+      required_check {
+        context        = "scan"
+        integration_id = 15368
+      }
+
+      required_check {
+        context        = "build"
+        integration_id = 15368
+      }
     }
   }
 }

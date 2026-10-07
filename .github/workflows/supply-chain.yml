@@ -1,0 +1,195 @@
+name: supply-chain
+
+# PRs:  scan everything, build the image, scan the image. JFrog access is read-only.
+# main: same, then push to JFrog with build-info, upload the SBOM, sign and attest the image.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supply-chain-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Scanner versions are pinned like any other dependency.
+  TRIVY_IMAGE: aquasec/trivy:0.74.0
+  SEMGREP_IMAGE: semgrep/semgrep:1.178.0
+  GITLEAKS_IMAGE: ghcr.io/gitleaks/gitleaks:v8.30.1
+  SYFT_IMAGE: anchore/syft:v1.52.0
+
+jobs:
+  scan:
+    name: scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write # upload SARIF results to the Security tab
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0 # Gitleaks scans the whole history, not just the last commit
+
+      - name: Prepare
+        run: mkdir -p sarif
+
+      - name: Secrets (Gitleaks, full git history)
+        id: gitleaks
+        continue-on-error: true
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/repo" "$GITLEAKS_IMAGE" \
+            git /repo --no-banner --redact --exit-code 1 \
+            --report-format sarif --report-path /repo/sarif/gitleaks.sarif
+
+      - name: SAST (Semgrep)
+        id: semgrep
+        continue-on-error: true
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/src" -w /src "$SEMGREP_IMAGE" \
+            semgrep scan --metrics=off --quiet \
+            --config p/python --config p/dockerfile --config p/github-actions \
+            --exclude jfrog-selfhosted --sarif --output sarif/semgrep.sarif
+          # Report everything, fail only on ERROR-level findings.
+          errors=$(jq '[.runs[].results[] | select(.level == "error")] | length' sarif/semgrep.sarif)
+          echo "Semgrep ERROR-level findings: $errors"
+          test "$errors" -eq 0
+
+      - name: Dependencies, secrets and IaC (Trivy)
+        id: trivy
+        continue-on-error: true
+        run: |
+          trivy() { docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/src" -w /src "$TRIVY_IMAGE" "$@"; }
+          trivy fs --quiet --cache-dir /src/.trivycache --scanners vuln,secret,misconfig \
+            --skip-dirs jfrog-selfhosted --format sarif --output sarif/trivy-fs.sarif .
+          # Gate: fail on HIGH/CRITICAL issues that have a fix available.
+          trivy fs --quiet --cache-dir /src/.trivycache --scanners vuln,secret,misconfig \
+            --skip-dirs jfrog-selfhosted --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 .
+
+      - name: Upload results to the Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@1190a975f95ce23525efb6a3fc21ea29567c1b52 # v3.38.2
+        with:
+          sarif_file: sarif
+
+      - name: Security gate
+        if: steps.gitleaks.outcome == 'failure' || steps.semgrep.outcome == 'failure' || steps.trivy.outcome == 'failure'
+        run: |
+          echo "::error::Gate failed. gitleaks=${{ steps.gitleaks.outcome }} semgrep=${{ steps.semgrep.outcome }} trivy=${{ steps.trivy.outcome }}"
+          exit 1
+
+  build:
+    name: build
+    needs: scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC: log in to JFrog and sign with Sigstore, no stored secrets
+    env:
+      JF_URL: ${{ vars.JFROG_URL }}
+      IMAGE_NAME: lab-api
+      BUILD_NAME: lab-api
+      BUILD_NUMBER: ${{ github.run_number }}
+      PUBLISH: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Check configuration
+        run: |
+          if [ -z "$JF_URL" ]; then
+            echo "::error::Repository variable JFROG_URL is not set (see docs/day04.md)"; exit 1
+          fi
+          echo "REGISTRY=${JF_URL#https://}" >> "$GITHUB_ENV"
+          echo "IMAGE=${JF_URL#https://}/lab-docker/$IMAGE_NAME:1.0.$BUILD_NUMBER" >> "$GITHUB_ENV"
+
+      # Exchanges the GitHub OIDC token for a 5-minute JFrog token.
+      # main gets lab-ci (push to dev), everything else lab-ci-readonly.
+      - name: JFrog CLI (OIDC)
+        id: jfrog
+        uses: jfrog/setup-jfrog-cli@eb77328bc74211c6c65cada8d5f6c0e156a51440 # v4.11.0
+        with:
+          oidc-provider-name: github-actions
+          oidc-audience: jfrog-github
+          disable-auto-build-publish: true
+          disable-auto-evidence-collection: true
+
+      - name: Docker login to JFrog
+        env:
+          OIDC_USER: ${{ steps.jfrog.outputs.oidc-user }}
+          OIDC_TOKEN: ${{ steps.jfrog.outputs.oidc-token }}
+        run: echo "$OIDC_TOKEN" | docker login "$REGISTRY" -u "$OIDC_USER" --password-stdin
+
+      - name: Build image (base image pulled through Artifactory)
+        run: |
+          docker build \
+            --build-arg BASE_IMAGE="$REGISTRY/lab-docker/library/python:3.14-slim" \
+            --label org.opencontainers.image.source="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            --label org.opencontainers.image.revision="$GITHUB_SHA" \
+            -t "$IMAGE" app
+
+      - name: Scan image (Trivy)
+        run: |
+          trivy() { docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE" "$@"; }
+          trivy image --quiet --format table "$IMAGE" | tail -n 40
+          # Gate: fixable HIGH/CRITICAL only. Unfixable base-image CVEs are tracked in Xray.
+          trivy image --quiet --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 "$IMAGE"
+
+      # ---------- main only ----------
+
+      - name: Push image with build-info
+        if: env.PUBLISH == 'true'
+        run: |
+          jf docker push "$IMAGE" --build-name "$BUILD_NAME" --build-number "$BUILD_NUMBER"
+          echo "DIGEST_REF=$(docker inspect --format '{{index .RepoDigests 0}}' "$IMAGE")" >> "$GITHUB_ENV"
+
+      - name: SBOM (Syft, SPDX)
+        if: env.PUBLISH == 'true'
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/out" "$SYFT_IMAGE" \
+            "$IMAGE" -o spdx-json=/out/sbom.spdx.json
+          jf rt upload sbom.spdx.json "lab-generic-evidence-local/$IMAGE_NAME/$BUILD_NUMBER/" \
+            --build-name "$BUILD_NAME" --build-number "$BUILD_NUMBER"
+
+      - name: Publish build-info
+        if: env.PUBLISH == 'true'
+        run: |
+          jf rt build-add-git "$BUILD_NAME" "$BUILD_NUMBER"
+          jf rt build-collect-env "$BUILD_NAME" "$BUILD_NUMBER"
+          jf rt build-publish "$BUILD_NAME" "$BUILD_NUMBER"
+
+      - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
+        if: env.PUBLISH == 'true'
+        with:
+          cosign-release: v2.6.5
+
+      # Keyless: the signing certificate says "this workflow, in this repo, on main".
+      - name: Sign image and attest SBOM (Cosign keyless)
+        if: env.PUBLISH == 'true'
+        run: |
+          cosign sign --yes "$DIGEST_REF"
+          cosign attest --yes --type spdxjson --predicate sbom.spdx.json "$DIGEST_REF"
+
+      - name: Verify signature
+        if: env.PUBLISH == 'true'
+        run: |
+          cosign verify "$DIGEST_REF" \
+            --certificate-identity "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/.github/workflows/supply-chain.yml@refs/heads/main" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com > /dev/null
+          echo "Signature verified"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### lab-api build $BUILD_NUMBER"
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Image | \`$IMAGE\` |"
+            echo "| Published | $PUBLISH |"
+            echo "| Digest | \`${DIGEST_REF:-n/a}\` |"
+            echo "| Build-info | \`$BUILD_NAME/$BUILD_NUMBER\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

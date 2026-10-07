@@ -34,7 +34,7 @@ Workplace: Dev Box / Windows 365 · custom images · pools
 - [x] Local tooling and Kubernetes (k3d)
 - [x] GitHub org governance: teams, rulesets, CODEOWNERS
 - [x] JFrog Artifactory administration as code (repos, permissions, Projects)
-- [ ] Supply-chain pipeline: scans → push → build-info → SBOM → signing
+- [x] Supply-chain pipeline: scans → push → build-info → SBOM → signing
 - [ ] Xray policies, watches and Curation
 - [ ] Artifactory housekeeping: cleanup policies, AQL, retention
 - [ ] Promotion gates, Argo CD, Kyverno signature verification

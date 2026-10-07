@@ -75,7 +75,17 @@ What changed in `app/Dockerfile` today and why:
 
 ## Part C – Break it on purpose (about 1h)
 
-Do each on a throwaway branch, watch it fail, then close the PR and delete the branch.
+Do each on a throwaway branch **created from `day04-supply-chain`**, and open the PR **against
+`day04-supply-chain`** (until Day 4 is merged, `main` doesn't have the scanning workflow yet):
+
+```bash
+git switch day04-supply-chain && git switch -c test-<name>
+# make the change, commit
+git push -u origin test-<name>
+gh pr create --base day04-supply-chain --title "test: <name>" --body "Part C exercise"
+```
+
+Watch it fail, then close the PR and delete the branch.
 
 1. **Vulnerable dependency.** Add `urllib3==1.26.4` to `app/requirements.txt`, push, open a PR.
    Which scanner fails first: Trivy fs in `scan`, or the image scan?

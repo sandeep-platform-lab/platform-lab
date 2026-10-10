@@ -49,14 +49,14 @@ terraform apply     # production OIDC mapping (priority 1), release group can re
 
 ---
 
-## Part B – Promote the latest main build (about 45 min)
+## Part B – Promote the version git asks for (about 45 min)
 
-Promote the newest successful `supply-chain` build on `main` (at the time of writing: **22**), and
-make sure `k8s/apps/lab-api/deployment.yaml` uses the same tag, because that's what Argo CD deploys.
+`k8s/apps/lab-api/deployment.yaml` on `main` declares which version should run (**1.0.22**). Promote
+exactly that build. Don't use "the latest build": every merge to `main` produces a new one.
 ```bash
-cd ~/workspace
-RUN=$(gh run list --workflow supply-chain.yml --branch main --status success --limit 1 --json number --jq '.[0].number')
-echo "promoting 1.0.$RUN"; grep "lab-api:" k8s/apps/lab-api/deployment.yaml
+cd ~/workspace && git switch main && git pull
+RUN=$(grep -oE 'lab-api:1\.0\.[0-9]+' k8s/apps/lab-api/deployment.yaml | cut -d. -f3)
+echo "promoting build $RUN"
 gh workflow run promote.yml -f build_number="$RUN"
 gh run list --workflow promote.yml --limit 1
 ```

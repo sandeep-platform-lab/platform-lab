@@ -17,4 +17,5 @@ def info() -> dict:
         "service": "lab-api",
         "version": os.getenv("APP_VERSION", "dev"),
         "environment": os.getenv("APP_ENV", "local"),
+        "department": "IT",
     }

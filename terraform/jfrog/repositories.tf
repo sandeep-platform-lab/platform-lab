@@ -29,16 +29,17 @@ resource "artifactory_local_docker_v2_repository" "prod" {
 }
 
 resource "artifactory_remote_docker_repository" "dockerhub" {
-  key                           = "${local.p}-docker-remote"
-  project_key                   = project_project.lab.key
-  description                   = "Proxy and cache of Docker Hub"
-  url                           = "https://registry-1.docker.io/"
-  curated                       = var.enable_curation # evaluated by Curation (curation.tf)
-  enable_token_authentication   = true
-  block_pushing_schema1         = true
-  external_dependencies_enabled = false
-  xray_index                    = true
-  project_environments          = ["DEV"]
+  key                                   = "${local.p}-docker-remote"
+  project_key                           = project_project.lab.key
+  description                           = "Proxy and cache of Docker Hub"
+  url                                   = "https://registry-1.docker.io/"
+  curated                               = var.enable_curation # evaluated by Curation (curation.tf)
+  unused_artifacts_cleanup_period_hours = 1440                # housekeeping: drop cache items unused for 60 days
+  enable_token_authentication           = true
+  block_pushing_schema1                 = true
+  external_dependencies_enabled         = false
+  xray_index                            = true
+  project_environments                  = ["DEV"]
 }
 
 resource "artifactory_virtual_docker_repository" "docker" {
@@ -61,14 +62,15 @@ resource "artifactory_local_pypi_repository" "local" {
 }
 
 resource "artifactory_remote_pypi_repository" "pypi" {
-  key                  = "${local.p}-pypi-remote"
-  project_key          = project_project.lab.key
-  description          = "Proxy and cache of pypi.org"
-  url                  = "https://files.pythonhosted.org"
-  curated              = var.enable_curation # evaluated by Curation (curation.tf)
-  pypi_registry_url    = "https://pypi.org"
-  xray_index           = true
-  project_environments = ["DEV"]
+  key                                   = "${local.p}-pypi-remote"
+  project_key                           = project_project.lab.key
+  description                           = "Proxy and cache of pypi.org"
+  url                                   = "https://files.pythonhosted.org"
+  curated                               = var.enable_curation # evaluated by Curation (curation.tf)
+  unused_artifacts_cleanup_period_hours = 1440                # housekeeping: drop cache items unused for 60 days
+  pypi_registry_url                     = "https://pypi.org"
+  xray_index                            = true
+  project_environments                  = ["DEV"]
 }
 
 resource "artifactory_virtual_pypi_repository" "pypi" {

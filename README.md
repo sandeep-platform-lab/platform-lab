@@ -36,7 +36,7 @@ Workplace: Dev Box / Windows 365 · custom images · pools
 - [x] JFrog Artifactory administration as code (repos, permissions, Projects)
 - [x] Supply-chain pipeline: scans → push → build-info → SBOM → signing
 - [x] Xray policies, watches and Curation
-- [ ] Artifactory housekeeping: cleanup policies, AQL, retention
+- [x] Artifactory housekeeping: cleanup policies, AQL, retention
 - [ ] Promotion gates, Argo CD, Kyverno signature verification
 - [ ] GitHub Enterprise: policies, audit log streaming, Entra SSO
 - [ ] Copilot administration and GitHub Advanced Security

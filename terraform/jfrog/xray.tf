@@ -200,3 +200,10 @@ resource "xray_watch" "builds" {
 
   depends_on = [xray_binary_manager_builds.lab]
 }
+
+resource "xray_ignore_rule" "base_image_cve" {
+  notes           = "No fix in Debian yet; not reachable from lab-api. Re-check on expiry. Ticket: LAB-1"
+  expiration_date = "2026-11-15"
+  cves            = ["CVE-2026-97689"] # from Part B
+  watches         = [xray_watch.builds.name]
+}

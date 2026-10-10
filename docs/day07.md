@@ -49,18 +49,21 @@ terraform apply     # production OIDC mapping (priority 1), release group can re
 
 ---
 
-## Part B – Promote build 17 (about 45 min)
+## Part B – Promote the latest main build (about 45 min)
 
-Build 17 is the first image built with the flattened Dockerfile, signed and Xray-clean.
+Promote the newest successful `supply-chain` build on `main` (at the time of writing: **22**), and
+make sure `k8s/apps/lab-api/deployment.yaml` uses the same tag, because that's what Argo CD deploys.
 ```bash
 cd ~/workspace
-gh workflow run promote.yml -f build_number=17
+RUN=$(gh run list --workflow supply-chain.yml --branch main --status success --limit 1 --json number --jq '.[0].number')
+echo "promoting 1.0.$RUN"; grep "lab-api:" k8s/apps/lab-api/deployment.yaml
+gh workflow run promote.yml -f build_number="$RUN"
 gh run list --workflow promote.yml --limit 1
 ```
 1. The run **waits**: GitHub → Actions → the run → **Review deployments** → tick `production` →
    **Approve and deploy**. Nobody, not even an admin, gets past this without an approval.
 2. Watch the gates: signature → Xray re-scan → promote → verify in prod.
-3. In JFrog, `lab-docker-prod-local/lab-api/1.0.17` now exists, with properties
+3. In JFrog, `lab-docker-prod-local/lab-api/1.0.<n>` now exists, with properties
    `promoted.build`, `promoted.by`, `promoted.run`. Compare its digest with the dev copy.
 
 ---
@@ -110,7 +113,7 @@ gh run list --workflow promote.yml --limit 1
    ```bash
    kubectl -n lab run nginx --image=nginx:1.29
    ```
-3. **Signed, but not a release:** set the image to `$REG/lab-docker-dev-local/lab-api:1.0.17`.
+3. **Signed, but not a release:** set the image to a *dev* tag, e.g. `$REG/lab-docker-dev-local/lab-api:1.0.19`.
    It's signed, but it isn't in the prod repo, so it's rejected.
 4. **Change by hand:** `kubectl -n lab scale deployment lab-api --replicas=5`. What does Argo CD do?
 

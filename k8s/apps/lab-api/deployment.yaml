@@ -1,0 +1,40 @@
+# lab-api, deployed by Argo CD from this folder. To release a new version: promote it with the
+# promote workflow, then change the tag below in a PR. Merging the PR is the deployment.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab-api
+  labels: { app: lab-api }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: lab-api }
+  template:
+    metadata:
+      labels: { app: lab-api }
+    spec:
+      imagePullSecrets:
+        - name: jfrog-pull   # created by hand, never in git (docs/day07.md)
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: lab-api
+          image: trial2t284t.jfrog.io/lab-docker-prod-local/lab-api:1.0.17
+          ports:
+            - containerPort: 8000
+          env:
+            - { name: APP_VERSION, value: "1.0.17" }
+            - { name: APP_ENV, value: "lab-k3d" }
+          readinessProbe:
+            httpGet: { path: /health, port: 8000 }
+          livenessProbe:
+            httpGet: { path: /health, port: 8000 }
+            initialDelaySeconds: 10
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 256Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }

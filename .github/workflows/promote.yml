@@ -1,0 +1,110 @@
+name: promote
+
+# Promotes one lab-api build from dev to prod. Nothing is rebuilt: the exact image that was built,
+# scanned and signed on main is copied, together with its signature and SBOM attestation.
+#
+# Gates, in order: approval (GitHub "production" environment) → signature from supply-chain on
+# main → Xray re-scan with today's vulnerability data → copy to prod → verify again in prod.
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: "supply-chain run number on main (image tag 1.0.<n>)"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: promote
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: promote
+    runs-on: ubuntu-latest
+    # Pauses for approval. JFrog only grants the release group to jobs in this environment.
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      JF_URL: ${{ vars.JFROG_URL }}
+      IMAGE_NAME: lab-api
+      BUILD_NAME: lab-api
+      BUILD_NUMBER: ${{ inputs.build_number }}
+      SIGNER: https://github.com/${{ github.repository }}/.github/workflows/supply-chain.yml@refs/heads/main
+      ISSUER: https://token.actions.githubusercontent.com
+    steps:
+      - name: Validate input
+        run: |
+          [[ "$BUILD_NUMBER" =~ ^[0-9]+$ ]] || { echo "::error::build_number must be a number"; exit 1; }
+          REGISTRY=${JF_URL#https://}
+          {
+            echo "REGISTRY=$REGISTRY"
+            echo "TAG=1.0.$BUILD_NUMBER"
+            echo "SRC=$REGISTRY/lab-docker-dev-local/$IMAGE_NAME:1.0.$BUILD_NUMBER"
+            echo "DST=$REGISTRY/lab-docker-prod-local/$IMAGE_NAME:1.0.$BUILD_NUMBER"
+          } >> "$GITHUB_ENV"
+
+      - name: JFrog CLI (OIDC, release group)
+        id: jfrog
+        uses: jfrog/setup-jfrog-cli@eb77328bc74211c6c65cada8d5f6c0e156a51440 # v4.11.0
+        with:
+          oidc-provider-name: github-actions
+          oidc-audience: jfrog-github
+          disable-auto-build-publish: true
+          disable-auto-evidence-collection: true
+
+      - name: Docker login to JFrog
+        env:
+          OIDC_USER: ${{ steps.jfrog.outputs.oidc-user }}
+          OIDC_TOKEN: ${{ steps.jfrog.outputs.oidc-token }}
+        run: echo "$OIDC_TOKEN" | docker login "$REGISTRY" -u "$OIDC_USER" --password-stdin
+
+      - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
+        with:
+          cosign-release: v2.6.5
+
+      - name: "Gate: signed by supply-chain on main"
+        run: |
+          cosign verify "$SRC" --certificate-identity "$SIGNER" --certificate-oidc-issuer "$ISSUER" > /dev/null
+          DIGEST=$(docker buildx imagetools inspect "$SRC" --format '{{json .Manifest}}' | jq -r .digest)
+          echo "DIGEST=$DIGEST" >> "$GITHUB_ENV"
+          echo "Verified $SRC ($DIGEST)"
+
+      - name: "Gate: Xray re-scan with today's data"
+        run: jf build-scan "$BUILD_NAME" "$BUILD_NUMBER" --fail=true --rescan
+
+      - name: Promote image, signature and attestation (copy, no rebuild)
+        run: |
+          jf rt docker-promote "$IMAGE_NAME" lab-docker-dev-local lab-docker-prod-local --source-tag "$TAG" --copy
+          # Cosign stores the signature and attestation as tags named after the digest.
+          for suffix in sig att; do
+            jf rt docker-promote "$IMAGE_NAME" lab-docker-dev-local lab-docker-prod-local \
+              --source-tag "${DIGEST/:/-}.$suffix" --copy
+          done
+          jf rt set-props "lab-docker-prod-local/$IMAGE_NAME/$TAG/" \
+            "promoted.from=lab-docker-dev-local;promoted.build=$BUILD_NUMBER;promoted.run=$GITHUB_RUN_ID;promoted.by=$GITHUB_ACTOR"
+
+      - name: Verify in prod
+        run: |
+          cosign verify "$DST" --certificate-identity "$SIGNER" --certificate-oidc-issuer "$ISSUER" > /dev/null
+          PROD_DIGEST=$(docker buildx imagetools inspect "$DST" --format '{{json .Manifest}}' | jq -r .digest)
+          [ "$PROD_DIGEST" = "$DIGEST" ] || { echo "::error::digest changed during promotion"; exit 1; }
+          echo "Prod image verified, same digest as dev: $DIGEST"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Promotion of lab-api 1.0.$BUILD_NUMBER"
+            echo "| | |"
+            echo "|---|---|"
+            echo "| From | \`${SRC:-n/a}\` |"
+            echo "| To | \`${DST:-n/a}\` |"
+            echo "| Digest | \`${DIGEST:-n/a}\` |"
+            echo ""
+            echo "Deploy it: set the image tag in \`k8s/apps/lab-api/deployment.yaml\` to \`1.0.$BUILD_NUMBER\` in a PR."
+          } >> "$GITHUB_STEP_SUMMARY"

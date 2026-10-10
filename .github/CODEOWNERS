@@ -7,3 +7,4 @@
 /.github/            @sandeep-platform-lab/platform-team
 /terraform/          @sandeep-platform-lab/platform-team
 /.github/CODEOWNERS  @sandeep-platform-lab/platform-team @sandeep-platform-lab/security-team
+/.gitleaks.toml      @sandeep-platform-lab/security-team

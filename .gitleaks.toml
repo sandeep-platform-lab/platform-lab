@@ -1,0 +1,12 @@
+# Gitleaks configuration: the default rules, plus narrow, reviewed exceptions.
+# Every exception says exactly what it matches and why. Changes need security-team review
+# (CODEOWNERS). Never allowlist whole files or directories.
+title = "platform-lab"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Test image tags like lab-api:devtest-1791050620 (docs/day07.md): a tag, not a credential"
+regexTarget = "match"
+regexes = ['''devtest-[0-9]{10}''']

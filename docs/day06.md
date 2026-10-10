@@ -8,7 +8,7 @@ Time: 3–4h. Code: `terraform/jfrog/housekeeping.tf`, `scripts/housekeeping-rep
 | Content | Rule | Why |
 |---|---|---|
 | Dev images | keep newest 10 versions per image | untested builds pile up fast |
-| Remote caches | drop if not downloaded for 60 days, skip trash can | can always be fetched again |
+| Remote caches | drop if not downloaded for 60 days (remote repo setting, not a policy) | can always be fetched again |
 | Internal PyPI | keep newest 5 versions per package | |
 | Prod images, evidence | **never** cleaned automatically | releases and audit evidence |
 | Anything with `retention.keep=true` | never deleted | how a release is pinned |
@@ -24,7 +24,9 @@ scripts/housekeeping-report.sh
 
 Read the output and `housekeeping.tf`, then answer:
 1. Why are cleanup policies **created disabled**, and why does Terraform `ignore_changes = [enabled]`?
-2. Why `skip_trashcan = true` for remote caches but `false` for dev images?
+2. Remote caches aren't in a cleanup policy: policies only accept **local** repos (we found out
+   when `terraform apply` failed with "Specified repo does not exist: lab-docker-remote"). How are
+   they cleaned instead? (Look for `unused_artifacts_cleanup_period_hours` in `repositories.tf`.)
 3. The report shows `.sig` and `.att` tags. What happens to an image's signature if a "keep newest
    10" rule counts signature tags as versions? (Real gotcha: signatures stored as tags compete with
    images for retention slots. OCI 1.1 *referrers* fix this by attaching them to the image instead.)
@@ -54,7 +56,7 @@ Two more things the report surfaces:
 
 ```bash
 cd ~/workspace/terraform/jfrog
-terraform plan     # expect: 3 to add
+terraform plan     # 2 cleanup policies + the remote repos' cleanup period
 terraform apply
 ```
 
@@ -71,7 +73,7 @@ jf rt set-props "lab-docker-dev-local/lab-api/1.0.$RUN/" "retention.keep=true"
 ## Part C – Run a policy (about 45 min)
 
 1. In the JFrog UI, find **Cleanup Policies** (use the Administration search box; menu names vary
-   between versions). You'll see the three `lab-*` policies, all inactive.
+   between versions). You'll see the two `lab-*` policies, both inactive.
 2. Open `lab-dev-docker-keep-10` and use **Run Now** (or activate it and wait for Saturday).
 3. Run the report again: `lab-api` should be down to 10 tags, and the pinned tag still there.
 4. Look in the **Trash Can** (Artifactory → Artifacts → Trash Can): the deleted tags are there.

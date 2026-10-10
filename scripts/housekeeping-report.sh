@@ -2,12 +2,13 @@
 # Read-only housekeeping report for the lab JFrog instance: storage per repo, and what the cleanup
 # policies in terraform/jfrog/housekeeping.tf WOULD delete. Deletes nothing.
 #
-# Usage: scripts/housekeeping-report.sh [keep_n_images] [remote_unused_days]
+# Usage: scripts/housekeeping-report.sh [keep_n_images] [remote_unused_days] [large_image_mb]
 # Needs JFROG_URL and JFROG_ACCESS_TOKEN (source ~/workspace/.env).
 set -euo pipefail
 
 KEEP_N=${1:-10}
 UNUSED_DAYS=${2:-60}
+LARGE_MB=${3:-50}
 : "${JFROG_URL:?source ~/workspace/.env first}" "${JFROG_ACCESS_TOKEN:?}"
 H="Authorization: Bearer $JFROG_ACCESS_TOKEN"
 api() { curl -sf -H "$H" "$JFROG_URL/artifactory/api/$1"; }
@@ -27,6 +28,21 @@ aql 'items.find({"repo":"lab-docker-dev-local","name":"manifest.json"}).include(
       | "\(.[0].image): \(length) tags, \([.[$keep:][]] | length) to delete"
         + (if length > $keep then "  e.g. \([.[$keep:][] | .tag][:5] | join(", "))" else "" end)'
 
+echo
+echo "== Dev images larger than $LARGE_MB MB (sum of each tag's files; shared layers are stored once)"
+# A Docker tag is a folder of layer files + manifest.json, so size is summed per folder, not per file.
+aql 'items.find({"repo":"lab-docker-dev-local"}).include("path","size")' \
+  | jq -r --argjson mb "$LARGE_MB" '
+      [.results[]] | group_by(.path)
+      | map({tag: .[0].path, mb: (([.[].size]|add)/1048576*10|floor/10)})
+      | map(select(.mb > $mb)) | sort_by(-.mb)
+      | if length == 0 then "none" else .[] | "\(.tag)\t\(.mb) MB" end' | column -t -s $'\t'
+
+echo
+echo "== Interrupted uploads (_uploads folders)"
+aql 'items.find({"repo":{"$match":"lab-docker-*"},"path":{"$match":"*_uploads*"}}).include("repo","path","size")' \
+  | jq -r 'if (.results|length)==0 then "none" else ([.results[]] | group_by(.repo + "/" + .path)[]
+      | "\(.[0].repo)/\(.[0].path): \(length) files, \(([.[].size]|add)/1048576|floor) MB") end'
 echo
 echo "== Signature and attestation tags in dev (they count as tags too)"
 aql 'items.find({"repo":"lab-docker-dev-local","name":"manifest.json","path":{"$match":"*sha256-*"}}).include("path")' \

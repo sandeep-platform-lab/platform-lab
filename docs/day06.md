@@ -31,12 +31,22 @@ Read the output and `housekeeping.tf`, then answer:
 4. Some dev "tags" are `sha256:…` digests, not version tags. Where do they come from?
    (Hint: what does `cosign` push, and what does a manifest list contain?)
 
-The report is built on **AQL**, the same query language the cleanup engine uses. Open the script
-and change one query, e.g. list dev images bigger than 50 MB:
+The report is built on **AQL**, the same query language the cleanup engine uses. Try a query, and
+notice what it actually measures:
 ```bash
-jf rt curl -XPOST /api/search/aql -H "Content-Type: text/plain" \
-  -d 'items.find({"repo":"lab-docker-dev-local","size":{"$gt":50000000}}).include("path","name","size")'
+jf rt curl -s -XPOST /api/search/aql -H "Content-Type: text/plain" \
+  -d 'items.find({"repo":"lab-docker-dev-local","size":{"$gt":50000000}}).include("path","name","size")' \
+  | jq '.range.total'
 ```
+**0 results**, even though some images are over 50 MB. AQL returns *items* (files), and a Docker tag
+is a folder of layer files plus `manifest.json`; no single layer is over 50 MB. To size an image,
+sum its files per folder, which is what the report's "larger than N MB" section does:
+```bash
+scripts/housekeeping-report.sh 10 60 40     # keep 10, unused 60 days, images over 40 MB
+```
+Two more things the report surfaces:
+- **`_uploads`**: leftovers from interrupted pushes. Pure clutter, and a good cleanup candidate.
+- Per-image sizes **overstate disk use**: layers shared between tags are stored once (Day 3).
 
 ---
 

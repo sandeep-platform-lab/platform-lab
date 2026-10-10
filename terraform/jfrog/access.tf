@@ -28,6 +28,7 @@ resource "platform_permission" "read" {
       groups = [
         { name = platform_group.this["${local.p}-developers"].name, permissions = ["READ", "ANNOTATE"] },
         { name = platform_group.this["${local.p}-ci-readonly"].name, permissions = ["READ"] },
+        { name = platform_group.this["${local.p}-release"].name, permissions = ["READ"] }, # promotion copies from dev
       ]
     }
     targets = [for k in concat(values(local.local_repos), values(local.virtual_repos)) : { name = k, include_patterns = ["**"] }]
@@ -65,7 +66,7 @@ resource "platform_permission" "ci_deploy" {
       groups = [
         { name = platform_group.this["${local.p}-ci"].name, permissions = ["READ", "WRITE", "ANNOTATE", "SCAN"] },
         { name = platform_group.this["${local.p}-developers"].name, permissions = ["READ"] },
-        { name = platform_group.this["${local.p}-release"].name, permissions = ["READ"] },
+        { name = platform_group.this["${local.p}-release"].name, permissions = ["READ", "SCAN"] }, # re-scan before promoting
       ]
     }
     targets = [{ name = "artifactory-build-info", include_patterns = ["**"] }]

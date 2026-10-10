@@ -1,0 +1,33 @@
+# Argo CD applications. Apply once by hand; from then on Argo CD keeps the cluster equal to git.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: lab-platform-policies
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/sandeep-platform-lab/platform-lab.git
+    targetRevision: main
+    path: k8s/platform/kyverno
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: lab-api
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/sandeep-platform-lab/platform-lab.git
+    targetRevision: main
+    path: k8s/apps/lab-api
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: lab
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }

@@ -1,0 +1,14 @@
+# Reachable at http://lab-api.localhost:8080 (k3d maps host port 8080 to Traefik).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lab-api
+spec:
+  rules:
+    - host: lab-api.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: lab-api, port: { number: 80 } }

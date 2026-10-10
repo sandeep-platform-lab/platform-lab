@@ -37,7 +37,7 @@ Workplace: Dev Box / Windows 365 · custom images · pools
 - [x] Supply-chain pipeline: scans → push → build-info → SBOM → signing
 - [x] Xray policies, watches and Curation
 - [x] Artifactory housekeeping: cleanup policies, AQL, retention
-- [ ] Promotion gates, Argo CD, Kyverno signature verification
+- [x] Promotion gates, Argo CD, Kyverno signature verification
 - [ ] GitHub Enterprise: policies, audit log streaming, Entra SSO
 - [ ] Copilot administration and GitHub Advanced Security
 - [ ] Azure landing zone with Terraform: AKS, Key Vault, workload identity, Azure Policy

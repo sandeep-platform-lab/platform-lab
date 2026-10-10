@@ -1,0 +1,56 @@
+# Admission control for the lab namespace: only signed release images from the prod repo may run.
+# The signature check is keyless: it trusts an identity (this repo's supply-chain workflow on main),
+# not a key. Kyverno reads signatures from JFrog with the jfrog-pull secret in the kyverno namespace.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: lab-require-signed-prod-images
+  annotations:
+    policies.kyverno.io/title: Require signed images from the prod repo
+    # Check Pods only. By default Kyverno also auto-generates rules for Deployments, and mutateDigest
+    # would then rewrite the Deployment's image to a digest; Argo CD would see that as drift and
+    # self-heal it back, forever. Pods are what actually run, so that's where the gate belongs.
+    pod-policies.kyverno.io/autogen-controllers: none
+    policies.kyverno.io/severity: high
+spec:
+  background: false
+  webhookTimeoutSeconds: 30
+  rules:
+    - name: images-from-prod-repo
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [lab]
+      validate:
+        failureAction: Enforce
+        message: "Only images from trial2t284t.jfrog.io/lab-docker-prod-local may run in namespace lab."
+        pattern:
+          spec:
+            containers:
+              - image: "trial2t284t.jfrog.io/lab-docker-prod-local/*"
+            =(initContainers):
+              - image: "trial2t284t.jfrog.io/lab-docker-prod-local/*"
+
+    - name: signed-by-supply-chain-on-main
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [lab]
+      verifyImages:
+        - imageReferences:
+            - "trial2t284t.jfrog.io/lab-docker-prod-local/*"
+          failureAction: Enforce
+          required: true
+          mutateDigest: true   # pin the running pod to the verified digest, so a moved tag can't swap it
+          verifyDigest: true
+          imageRegistryCredentials:
+            secrets: [jfrog-pull]
+          attestors:
+            - entries:
+                - keyless:
+                    issuer: https://token.actions.githubusercontent.com
+                    subject: https://github.com/sandeep-platform-lab/platform-lab/.github/workflows/supply-chain.yml@refs/heads/main
+                    rekor:
+                      url: https://rekor.sigstore.dev

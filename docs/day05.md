@@ -179,3 +179,20 @@ Know the difference for interviews:
 ## Notes
 
 _Your observations here._
+
+## Lesson learned: the first `main` run with the Xray gate failed (run 15)
+
+Xray failed build 15 on 5 fixable HIGH CVEs in `urllib3`, `msgpack` and `setuptools`, packages that
+Trivy said were gone since Day 4. Two reasons:
+
+1. **Layers.** `pip uninstall` in a later layer only *hides* files; the base image's layer still
+   ships them inside the image. Trivy scans the merged filesystem, Xray scans every layer.
+2. **`ensurepip`.** Python bundles a complete pip *wheel* (a zip with vendored packages) in
+   `/usr/local/lib/python3.*/ensurepip/_bundled/`. Xray looks inside it.
+
+Fix in `app/Dockerfile`: remove pip **and** `ensurepip` in a `runtime-fs` stage, then copy that
+filesystem into `FROM scratch` as a single layer. Verified locally with
+`jf docker scan lab-api:after --watches lab-builds`: fixable violations 5 → 0.
+
+Takeaways: different scanners see different things (run more than one, understand how each works);
+deleting in a later layer isn't deleting; and the gate did its job by refusing to sign the image.

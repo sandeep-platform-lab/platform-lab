@@ -106,5 +106,5 @@ jobs:
             echo "| To | \`${DST:-n/a}\` |"
             echo "| Digest | \`${DIGEST:-n/a}\` |"
             echo ""
-            echo "Deploy it: set the image tag in \`k8s/apps/lab-api/deployment.yaml\` to \`1.0.$BUILD_NUMBER\` in a PR."
+            echo "Deploy it: set \`newTag\` in \`k8s/apps/lab-api/kustomization.yaml\` to \`1.0.$BUILD_NUMBER\` in a PR."
           } >> "$GITHUB_STEP_SUMMARY"

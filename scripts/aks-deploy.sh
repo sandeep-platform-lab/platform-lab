@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Deploys lab-api to the AKS lab cluster with workload identity + Key Vault CSI, then proves the
 # pod can read the Key Vault secret. Values come from terraform/azure outputs.
-# Usage: scripts/aks-deploy.sh [image tag]   (default: the tag in k8s/apps/lab-api/deployment.yaml)
+# Usage: scripts/aks-deploy.sh [image tag]   (default: newTag in k8s/apps/lab-api/kustomization.yaml)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 set -a; source ./.env; set +a
 TF="terraform -chdir=terraform/azure"
 export REGISTRY=${JFROG_URL#https://}
-export TAG=${1:-$(grep -oE 'lab-api:1\.0\.[0-9]+' k8s/apps/lab-api/deployment.yaml | cut -d: -f2)}
+export TAG=${1:-$(yq '.images[0].newTag' k8s/apps/lab-api/kustomization.yaml)}
 export LAB_API_CLIENT_ID=$($TF output -raw lab_api_client_id)
 export KEY_VAULT_NAME=$($TF output -raw key_vault_name)
 export TENANT_ID=$($TF output -raw tenant_id)

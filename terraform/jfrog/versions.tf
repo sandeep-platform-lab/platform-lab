@@ -19,6 +19,11 @@ terraform {
       version = ">= 3.0"
     }
   }
+
+  # State in Azure Storage: terraform init -backend-config=../backend.hcl
+  backend "azurerm" {
+    key = "jfrog.tfstate"
+  }
 }
 
 # Auth for all three providers: export JFROG_URL and JFROG_ACCESS_TOKEN (see .env).

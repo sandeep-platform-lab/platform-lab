@@ -20,7 +20,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: lab-api
-          image: trial2t284t.jfrog.io/lab-docker-prod-local/lab-api:1.0.22
+          image: trial2t284t.jfrog.io/lab-docker-prod-local/lab-api:1.0.26
           ports:
             - containerPort: 8000
           env:

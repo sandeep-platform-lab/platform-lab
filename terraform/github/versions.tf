@@ -8,7 +8,10 @@ terraform {
     }
   }
 
-  # Local state for now (git-ignored). Moves to an Azure Storage backend on the Azure day.
+  # State in Azure Storage: terraform init -backend-config=../backend.hcl
+  backend "azurerm" {
+    key = "github.tfstate"
+  }
 }
 
 # Auth: export GITHUB_TOKEN=$(gh auth token)

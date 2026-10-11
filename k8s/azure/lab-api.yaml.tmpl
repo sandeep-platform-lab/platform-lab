@@ -1,0 +1,102 @@
+# lab-api on AKS with workload identity. Rendered by scripts/aks-deploy.sh from Terraform outputs
+# (${...} placeholders); never applied as-is.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lab
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+---
+# The pod's identity. Azure trusts THIS service account (namespace lab, name lab-api) through the
+# federated credential in terraform/azure/identity.tf. No client secret is stored anywhere.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: lab-api
+  namespace: lab
+  annotations:
+    azure.workload.identity/client-id: "${LAB_API_CLIENT_ID}"
+---
+# Which Key Vault secrets to mount, and with which identity to fetch them.
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: lab-api-kv
+  namespace: lab
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    clientID: "${LAB_API_CLIENT_ID}"   # workload identity
+    keyvaultName: "${KEY_VAULT_NAME}"
+    tenantId: "${TENANT_ID}"
+    objects: |
+      array:
+        - |
+          objectName: lab-api-greeting
+          objectType: secret
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab-api
+  namespace: lab
+  labels: { app: lab-api }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: lab-api }
+  template:
+    metadata:
+      labels:
+        app: lab-api
+        azure.workload.identity/use: "true"   # webhook injects the federated token
+    spec:
+      serviceAccountName: lab-api
+      imagePullSecrets:
+        - name: jfrog-pull
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: lab-api
+          image: ${REGISTRY}/lab-docker-prod-local/lab-api:${TAG}
+          ports:
+            - containerPort: 8000
+          env:
+            - { name: APP_VERSION, value: "${TAG}" }
+            - { name: APP_ENV, value: "aks-switzerlandnorth" }
+          readinessProbe:
+            httpGet: { path: /health, port: 8000 }
+          livenessProbe:
+            httpGet: { path: /health, port: 8000 }
+            initialDelaySeconds: 10
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 256Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          volumeMounts:
+            - name: kv-secrets
+              mountPath: /mnt/secrets
+              readOnly: true
+      volumes:
+        - name: kv-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: lab-api-kv
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lab-api
+  namespace: lab
+spec:
+  selector: { app: lab-api }
+  ports:
+    - port: 80
+      targetPort: 8000

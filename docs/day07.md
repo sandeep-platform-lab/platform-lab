@@ -51,11 +51,11 @@ terraform apply     # production OIDC mapping (priority 1), release group can re
 
 ## Part B – Promote the version git asks for (about 45 min)
 
-`k8s/apps/lab-api/deployment.yaml` on `main` declares which version should run (**1.0.22**). Promote
+`k8s/apps/lab-api/kustomization.yaml` (`newTag`) on `main` declares which version should run (**1.0.22**). Promote
 exactly that build. Don't use "the latest build": every merge to `main` produces a new one.
 ```bash
 cd ~/workspace && git switch main && git pull
-RUN=$(grep -oE 'lab-api:1\.0\.[0-9]+' k8s/apps/lab-api/deployment.yaml | cut -d. -f3)
+RUN=$(yq '.images[0].newTag' k8s/apps/lab-api/kustomization.yaml | cut -d. -f3)
 echo "promoting build $RUN"
 gh workflow run promote.yml -f build_number="$RUN"
 gh run list --workflow promote.yml --limit 1
@@ -124,7 +124,7 @@ gh run list --workflow promote.yml --limit 1
 1. Make a small change to `app/src/main.py` (e.g. a new field in `/api/info`), PR, merge.
    `supply-chain` builds, scans and signs build N.
 2. `gh workflow run promote.yml -f build_number=N`, approve.
-3. PR: change the image tag **and** `APP_VERSION` in `k8s/apps/lab-api/deployment.yaml` to `1.0.N`.
+3. PR: change `newTag` in `k8s/apps/lab-api/kustomization.yaml` to `1.0.N` (Kustomize sets the image and `APP_VERSION` from it).
    Merging the PR *is* the deployment: Argo CD rolls it out.
 4. Rollback = revert that PR.
 

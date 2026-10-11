@@ -21,7 +21,8 @@ Workplace: Dev Box / Windows 365 · custom images · pools
 |---|---|
 | `app/` | `lab-api`: sample FastAPI service with tests and a non-root Dockerfile |
 | `.github/workflows/` | CI/CD pipelines |
-| `terraform/github/` | Teams, repo permissions and the `main` ruleset as code |
+| `terraform/github/` | Teams, repo permissions, the `main` ruleset and the production environment as code |
+| `terraform/github-enterprise/` | Enterprise policies: allowed actions, default token permissions, secret scanning defaults |
 | `terraform/jfrog/` | JFrog Project, repos, groups, permissions and GitHub OIDC trust as code |
 | `jfrog-selfhosted/` | Artifactory OSS + PostgreSQL in Docker Compose for operations practice |
 | `terraform/azure/` | Landing zone basics and AKS: Azure Policy, VNet, Log Analytics, Key Vault, AKS with Entra RBAC and workload identity |

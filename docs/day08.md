@@ -58,12 +58,17 @@ Read `terraform/azure/*.tf` first:
 2. `aks.tf`: why a *user-assigned* control-plane identity with Network Contributor on the subnet?
 3. `local_account_disabled = true`: how will you run `kubectl` at all?
 4. `network_plugin_mode = "overlay"`: why is the node subnet only a /22?
+5. The API server and Key Vault only accept your IP (`admin_ip`), and Key Vault also the node subnet
+   via a service endpoint. The first PR run failed Trivy (AZU-0041, AZU-0013) until these were added.
+   If your home IP changes, `kubectl` and Terraform's Key Vault calls fail: re-run `apply` with the new IP.
 
 ```bash
 cd ~/workspace/terraform/azure
 terraform init -backend-config=../backend.hcl
-terraform plan -var subscription_id=$(az account show --query id -o tsv)    # 20 to add
-terraform apply -var subscription_id=$(az account show --query id -o tsv)   # ~10 minutes for AKS
+# Your public IP is the only one allowed to reach the AKS API server and Key Vault (not stored in git).
+VARS="-var subscription_id=$(az account show --query id -o tsv) -var admin_ip=$(curl -s https://api.ipify.org)"
+terraform plan  $VARS    # 20 to add
+terraform apply $VARS    # ~10 minutes for AKS
 ```
 
 Get credentials (Entra ID login through kubelogin; there's no admin certificate to download):
@@ -123,7 +128,7 @@ Then:
 
 ```bash
 cd ~/workspace/terraform/azure
-terraform destroy -var subscription_id=$(az account show --query id -o tsv)
+terraform destroy -var subscription_id=$(az account show --query id -o tsv) -var admin_ip=$(curl -s https://api.ipify.org)
 az group exists -n rg-platformlab-aks          # false
 az group exists -n rg-platformlab-aks-nodes    # false (AKS removes its node RG)
 az group exists -n rg-platform-lab             # true: budget and state stay

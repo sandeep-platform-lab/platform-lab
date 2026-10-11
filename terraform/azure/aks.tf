@@ -31,6 +31,12 @@ resource "azurerm_kubernetes_cluster" "lab" {
     tenant_id          = data.azurerm_client_config.current.tenant_id
   }
 
+  # API server reachable only from your IP. AKS adds the cluster's own outbound IP automatically.
+  # Production: a private cluster, reached through a VPN/jump host or a self-hosted runner.
+  api_server_access_profile {
+    authorized_ip_ranges = ["${var.admin_ip}/32"]
+  }
+
   # Workload identity: pods get Entra tokens via OIDC federation instead of stored secrets.
   oidc_issuer_enabled       = true
   workload_identity_enabled = true

@@ -35,7 +35,8 @@ resource "azurerm_subnet" "aks_nodes" {
   name                 = "snet-aks-nodes"
   resource_group_name  = azurerm_resource_group.aks.name
   virtual_network_name = azurerm_virtual_network.lab.name
-  address_prefixes     = ["10.40.0.0/22"] # nodes only: pods get overlay IPs, not VNet IPs
+  address_prefixes     = ["10.40.0.0/22"]       # nodes only: pods get overlay IPs, not VNet IPs
+  service_endpoints    = ["Microsoft.KeyVault"] # nodes reach Key Vault over the Azure backbone
 }
 
 # ---------- Logging ----------
@@ -61,7 +62,17 @@ resource "azurerm_key_vault" "lab" {
   rbac_authorization_enabled = true  # Azure RBAC, not legacy access policies
   purge_protection_enabled   = false # lab only; production: true
   soft_delete_retention_days = 7
-  tags                       = local.tags
+
+  # Firewall: deny by default. Allowed: the AKS node subnet (CSI driver, via service endpoint) and
+  # your IP (Terraform and az CLI). Trusted Azure services may bypass.
+  network_acls {
+    default_action             = "Deny"
+    bypass                     = "AzureServices"
+    ip_rules                   = [var.admin_ip]
+    virtual_network_subnet_ids = [azurerm_subnet.aks_nodes.id]
+  }
+
+  tags = local.tags
 }
 
 # You (whoever runs Terraform) may manage secrets; the app only reads one (identity.tf).

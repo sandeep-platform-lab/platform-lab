@@ -60,6 +60,11 @@ gh api "enterprises/$SLUG" --jq '{name, slug, html_url}' 2>/dev/null || gh api g
 
 All actions our workflows use are covered (checked: `actions/*`, `github/codeql-action`, the two above).
 
+**Watch out:** while `GITHUB_TOKEN` is exported in your shell, `gh` uses it instead of its stored
+login, and `gh auth refresh` refuses to run, so new scopes never arrive (that's what caused the 404s
+here). `unset GITHUB_TOKEN` before refreshing, or pass the token to one command only:
+`GITHUB_TOKEN=$(gh auth token) terraform apply …`.
+
 ```bash
 cd ~/workspace/terraform/github-enterprise
 export GITHUB_TOKEN=$(gh auth token)

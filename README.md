@@ -26,6 +26,7 @@ Workplace: Dev Box / Windows 365 · custom images · pools
 | `terraform/jfrog/` | JFrog Project, repos, groups, permissions and GitHub OIDC trust as code |
 | `jfrog-selfhosted/` | Artifactory OSS + PostgreSQL in Docker Compose for operations practice |
 | `terraform/azure/` | Landing zone basics and AKS: Azure Policy, VNet, Log Analytics, Key Vault, AKS with Entra RBAC and workload identity |
+| `terraform/azure-audit/` | Permanent, immutable (WORM) storage for the GitHub Enterprise audit log stream |
 | `k8s/azure/` | lab-api on AKS with workload identity and the Key Vault CSI driver |
 | `k8s/` | Local cluster config, Argo CD apps, Kyverno policies |
 | `scripts/` | Helper scripts |
@@ -40,7 +41,7 @@ Workplace: Dev Box / Windows 365 · custom images · pools
 - [x] Xray policies, watches and Curation
 - [x] Artifactory housekeeping: cleanup policies, AQL, retention
 - [x] Promotion gates, Argo CD, Kyverno signature verification
-- [ ] GitHub Enterprise: policies, audit log streaming, Entra SSO
+- [x] GitHub Enterprise: policies, audit log streaming, Entra SSO
 - [ ] Copilot administration and GitHub Advanced Security
 - [x] Azure landing zone with Terraform: AKS, Key Vault, workload identity, Azure Policy
 - [ ] Developer workplace: Dev Box / Windows 365 images and pools

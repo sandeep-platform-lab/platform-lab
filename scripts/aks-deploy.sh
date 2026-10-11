@@ -20,9 +20,9 @@ ctx=$(kubectl config current-context)
 echo "== Deploying lab-api:$TAG to $CLUSTER"
 envsubst '${LAB_API_CLIENT_ID} ${KEY_VAULT_NAME} ${TENANT_ID} ${REGISTRY} ${TAG}' \
   < k8s/azure/lab-api.yaml.tmpl > /tmp/lab-api-aks.yaml
+# The namespace must exist before a server-side dry run can check the objects inside it.
+yq 'select(.kind == "Namespace")' /tmp/lab-api-aks.yaml | kubectl apply -f -
 kubectl apply -f /tmp/lab-api-aks.yaml --dry-run=server >/dev/null   # fail early, before changing anything
-
-kubectl apply -f /tmp/lab-api-aks.yaml | grep -E "namespace|serviceaccount" || true
 # Pull secret for JFrog: read-only developer token, 7 days, never in git.
 TOKEN=$(jf atc --groups lab-developers --expiry 604800 | jq -r .access_token)
 kubectl -n lab create secret docker-registry jfrog-pull --docker-server="$REGISTRY" \

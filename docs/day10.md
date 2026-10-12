@@ -30,15 +30,17 @@ terraform apply -var subscription_id=$(az account show --query id -o tsv)    # 6
 
 ## Part B – Stream the audit log (about 15 min)
 
-1. A SAS for GitHub, tied to a **stored access policy**: create + write only, on this container
-   only, 30 days, and revocable at any time by deleting the policy.
+1. A SAS for GitHub: create + write only, this container only, 30 days, and **revocable** through a
+   stored access policy. The permissions and expiry go **in the SAS URL** (`sp=cw`, `se=…`); the policy
+   is only there for revocation (`si=github-stream`). If the policy holds them instead, the URL has no
+   `sp`/`se`, and GitHub's **Check endpoint** fails (that's what happened the first time).
    ```bash
    SA=$(terraform output -raw storage_account); C=$(terraform output -raw container)
    EXP=$(date -u -v+30d +%Y-%m-%dT%H:%MZ)
-   az storage container policy create --account-name "$SA" -c "$C" -n github-stream \
-     --permissions cw --expiry "$EXP" --auth-mode key
+   export AZURE_CORE_ONLY_SHOW_ERRORS=true   # hides "querying the account key" warnings
+   az storage container policy create --account-name "$SA" -c "$C" -n github-stream --auth-mode key -o none
    SAS=$(az storage container generate-sas --account-name "$SA" -n "$C" --policy-name github-stream \
-     --https-only --auth-mode key -o tsv)
+     --permissions cw --expiry "$EXP" --https-only --auth-mode key -o tsv)
    echo "https://$SA.blob.core.windows.net/$C?$SAS"
    ```
    The printed URL is a credential: paste it into GitHub in the next step, don't save it anywhere.

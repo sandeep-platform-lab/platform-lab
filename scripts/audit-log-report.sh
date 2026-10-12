@@ -21,7 +21,7 @@ echo "$total blobs; reading the newest $N"
 
 jq -r --argjson n "$N" '.[-$n:][] | .n' "$WORK/blobs.json" | while read -r blob; do
   f="$WORK/$(echo "$blob" | tr '/' '_')"
-  az storage blob download --account-name "$SA" -c "$C" -n "$blob" -f "$f" --auth-mode login -o none
+  az storage blob download --account-name "$SA" -c "$C" -n "$blob" -f "$f" --auth-mode login --no-progress -o none
   # Blobs may be gzipped and may hold JSON lines or a JSON array: normalise to one event per line.
   if gzip -t "$f" 2>/dev/null; then gunzip -c "$f"; else cat "$f"; fi \
     | jq -c 'if type == "array" then .[] else . end' >> "$WORK/events.jsonl"

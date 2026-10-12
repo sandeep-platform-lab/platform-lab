@@ -48,15 +48,27 @@ terraform apply -var subscription_id=$(az account show --query id -o tsv)    # 6
    "querying the account key" warnings. Commands here have no inline `#` comments: zsh doesn't
    accept them in pasted commands unless `setopt interactivecomments` is set.)
    The printed URL is a credential: paste it into GitHub in the next step, don't save it anywhere.
-2. In GitHub: your enterprise → **Settings** → **Audit log** → **Log streaming** →
+2. **WORM off while you set up the stream.** GitHub's **Check endpoint** writes (and on every later
+   check, overwrites) a test blob called `_check`. The immutable container forbids overwriting, so
+   only the very first check can ever pass. That's what happened here. Turn WORM off first:
+   ```bash
+   terraform apply -var subscription_id=$(az account show --query id -o tsv) -var worm_enabled=false
+   az storage blob delete --account-name "$SA" -c "$C" -n _check --auth-mode key -o none
+   ```
+   (The delete fails harmlessly if `_check` doesn't exist yet.)
+3. In GitHub: your enterprise → **Settings** → **Audit log** → **Log streaming** →
    **Configure stream** → **Azure Blob Storage**. Paste the URL, **Check endpoint**, **Save**.
+4. WORM back on (GitHub's real log files have unique names and are never overwritten):
+   ```bash
+   terraform apply -var subscription_id=$(az account show --query id -o tsv)
+   ```
    (GitHub's guide: https://docs.github.com/en/enterprise-cloud@latest/admin/monitoring-activity-in-your-enterprise/reviewing-audit-logs-for-your-enterprise/streaming-the-audit-log-for-your-enterprise)
-3. Verify from the CLI, then clear the variable:
+5. Verify from the CLI, then clear the variable:
    ```bash
    gh api enterprises/sandeep-platform-lab-ent/audit-log/streams --jq '.[] | {stream_type, enabled, created_at}'
    unset SAS
    ```
-4. To revoke GitHub's access later: `az storage container policy delete --account-name "$SA" -c "$C" -n github-stream --auth-mode key`.
+6. To revoke GitHub's access later: `az storage container policy delete --account-name "$SA" -c "$C" -n github-stream --auth-mode key`.
 
 ---
 
@@ -131,6 +143,9 @@ Look for the SAML and streaming changes you made today: who, what, when, kept ou
   Splunk). Blob Storage is cheap long-term retention; Event Hubs feeds a SIEM in near real time.
 - **Tamper evidence:** immutable (WORM) storage with a locked retention policy, data in Switzerland,
   read access via Entra ID only. The writer (GitHub) can add but not change.
+- **WORM gotcha met here:** a tool that overwrites a fixed file name (GitHub's `_check`) breaks
+  under container-level WORM. With a *locked* policy you couldn't even switch it off: use
+  **version-level** immutability, where an overwrite creates a new version and old ones stay immutable.
 - **Least privilege for the writer:** a SAS with create+write only, on one container, with expiry,
   revocable through a stored access policy. Shared keys enabled only on this account, and why.
 - **SAML vs EMU:** enterprise SAML with personal accounts links people's own GitHub accounts to the

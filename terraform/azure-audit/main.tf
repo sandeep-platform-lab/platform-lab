@@ -62,7 +62,12 @@ resource "azurerm_storage_container" "github_audit" {
 
 # WORM: for 30 days after each blob is written, nobody (including you) can modify or delete it.
 # locked = false so the lab can be torn down; production: locked, and a regulator-driven period.
+# GitHub's "Check endpoint" overwrites a blob named _check, which WORM forbids, so the policy is
+# switched off (worm_enabled = false) while the stream is set up, then on again. Real audit files
+# have unique names and are never overwritten. With a LOCKED policy you couldn't switch it off:
+# production would use version-level immutability, where an overwrite creates a new version.
 resource "azurerm_storage_container_immutability_policy" "github_audit" {
+  count                                 = var.worm_enabled ? 1 : 0
   storage_container_resource_manager_id = azurerm_storage_container.github_audit.id
   immutability_period_in_days           = 30
   locked                                = false

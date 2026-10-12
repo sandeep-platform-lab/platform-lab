@@ -35,14 +35,18 @@ terraform apply -var subscription_id=$(az account show --query id -o tsv)    # 6
    is only there for revocation (`si=github-stream`). If the policy holds them instead, the URL has no
    `sp`/`se`, and GitHub's **Check endpoint** fails (that's what happened the first time).
    ```bash
+   export AZURE_CORE_ONLY_SHOW_ERRORS=true
    SA=$(terraform output -raw storage_account); C=$(terraform output -raw container)
    EXP=$(date -u -v+30d +%Y-%m-%dT%H:%MZ)
-   export AZURE_CORE_ONLY_SHOW_ERRORS=true   # hides "querying the account key" warnings
+   az storage container policy delete --account-name "$SA" -c "$C" -n github-stream --auth-mode key -o none
    az storage container policy create --account-name "$SA" -c "$C" -n github-stream --auth-mode key -o none
-   SAS=$(az storage container generate-sas --account-name "$SA" -n "$C" --policy-name github-stream \
-     --permissions cw --expiry "$EXP" --https-only --auth-mode key -o tsv)
+   SAS=$(az storage container generate-sas --account-name "$SA" -n "$C" --policy-name github-stream --permissions cw --expiry "$EXP" --https-only --auth-mode key -o tsv)
+   echo "$SAS" | tr '&' '\n' | cut -d= -f1 | tr '\n' ' '; echo
    echo "https://$SA.blob.core.windows.net/$C?$SAS"
    ```
+   The parameter list must include `sp` and `se`. (`AZURE_CORE_ONLY_SHOW_ERRORS` hides the CLI's
+   "querying the account key" warnings. Commands here have no inline `#` comments: zsh doesn't
+   accept them in pasted commands unless `setopt interactivecomments` is set.)
    The printed URL is a credential: paste it into GitHub in the next step, don't save it anywhere.
 2. In GitHub: your enterprise → **Settings** → **Audit log** → **Log streaming** →
    **Configure stream** → **Azure Blob Storage**. Paste the URL, **Check endpoint**, **Save**.

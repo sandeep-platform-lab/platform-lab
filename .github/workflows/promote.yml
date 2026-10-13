@@ -50,7 +50,7 @@ jobs:
 
       - name: JFrog CLI (OIDC, release group)
         id: jfrog
-        uses: jfrog/setup-jfrog-cli@eb77328bc74211c6c65cada8d5f6c0e156a51440 # v4.11.0
+        uses: jfrog/setup-jfrog-cli@68c0efdc951dd2359bbbfa15c48bc67b3ae8e4d6 # v5.2.0
         with:
           oidc-provider-name: github-actions
           oidc-audience: jfrog-github
@@ -63,7 +63,7 @@ jobs:
           OIDC_TOKEN: ${{ steps.jfrog.outputs.oidc-token }}
         run: echo "$OIDC_TOKEN" | docker login "$REGISTRY" -u "$OIDC_USER" --password-stdin
 
-      - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
         with:
           cosign-release: v2.6.5
 

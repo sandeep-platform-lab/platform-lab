@@ -46,6 +46,12 @@ resource "azurerm_kubernetes_cluster" "lab" {
     identity_ids = [azurerm_user_assigned_identity.aks.id]
   }
 
+  # azurerm 5.x requires this block. Manual = the node pools defined here; Auto = Node
+  # Auto-Provisioning (Karpenter-based), which picks VM sizes itself.
+  node_provisioning_profile {
+    mode = "Manual"
+  }
+
   default_node_pool {
     name                        = "system"
     vm_size                     = var.node_vm_size

@@ -29,3 +29,7 @@ sbom.spdx.json
 
 # Local-only Terraform overrides (e.g. a local backend for dry runs)
 *_override.tf
+
+# Packer
+packer_cache/
+packer-manifest.json

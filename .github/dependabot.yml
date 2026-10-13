@@ -23,6 +23,7 @@ updates:
     directories:
       - /terraform/azure
       - /terraform/azure-audit
+      - /terraform/azure-images
       - /terraform/github
       - /terraform/github-enterprise
       - /terraform/jfrog

@@ -24,6 +24,20 @@ when you don't need it: `k3d cluster stop lab`.
 
 ## Part B – Copilot administration (about 50 min)
 
+> **Trial limitation (found 14 Oct):** turning on Copilot Business in the enterprise fails with
+> *"GitHub Copilot Business requires a paid enterprise account"*. The Enterprise Cloud trial doesn't
+> include Copilot. Options were: upgrade the enterprise (expensive), buy one Business seat in a
+> separate org outside the enterprise (about USD 19), or **use Copilot Free on a personal account for
+> the developer side and learn the admin side from the API and docs. Chosen: the free route.**
+> Steps 2, 3, 5 and 6 below need Copilot Business; read them as "what I would do", and run
+> `scripts/copilot-admin.sh status` and `metrics` to see the real API responses on this account.
+> With a paid org: `ORG=<org> scripts/copilot-admin.sh …` works unchanged.
+
+**Developer side (Copilot Free):** github.com → your avatar → **Copilot settings**. In VS Code with
+the GitHub Copilot extension: try completions and chat on `app/src/main.py`, and notice what an
+admin would want to control (which models, public-code matching, what gets sent).
+
+
 ```bash
 cd ~/workspace && scripts/copilot-admin.sh status
 ```

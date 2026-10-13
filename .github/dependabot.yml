@@ -1,0 +1,33 @@
+# Dependabot version updates: keeps pins current (action SHAs, Python packages, Terraform providers).
+# Security updates (PRs for vulnerable dependencies) are a separate repository setting (docs/day11.md).
+# Every Dependabot PR goes through the same checks and the main ruleset as anyone else's.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: pip
+    directory: /app
+    schedule:
+      interval: weekly
+    groups:
+      python:
+        patterns: ["*"]
+
+  - package-ecosystem: terraform
+    directories:
+      - /terraform/azure
+      - /terraform/azure-audit
+      - /terraform/github
+      - /terraform/github-enterprise
+      - /terraform/jfrog
+    schedule:
+      interval: monthly
+    groups:
+      terraform-providers:
+        patterns: ["*"]

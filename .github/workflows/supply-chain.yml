@@ -82,6 +82,21 @@ jobs:
           echo "::error::Gate failed. gitleaks=${{ steps.gitleaks.outcome }} semgrep=${{ steps.semgrep.outcome }} trivy=${{ steps.trivy.outcome }}"
           exit 1
 
+  # PRs only: compares the dependency graph of the PR with the base branch and blocks newly added
+  # dependencies with known HIGH/CRITICAL vulnerabilities or a forbidden licence.
+  dependency-review:
+    name: dependency-review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          deny-licenses: AGPL-3.0, GPL-3.0
+          show-openssf-scorecard: true
+
   build:
     name: build
     needs: scan
@@ -94,21 +109,34 @@ jobs:
       IMAGE_NAME: lab-api
       BUILD_NAME: lab-api
       BUILD_NUMBER: ${{ github.run_number }}
-      PUBLISH: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+      # JFrog is optional: without the JFROG_URL variable (e.g. after the trial), the job still builds
+      # and scans the image, from Docker Hub, and skips everything that needs JFrog.
+      JFROG_ENABLED: ${{ vars.JFROG_URL != '' }}
+      PUBLISH: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.JFROG_URL != '' }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Check configuration
         run: |
-          if [ -z "$JF_URL" ]; then
-            echo "::error::Repository variable JFROG_URL is not set (see docs/day04.md)"; exit 1
+          if [ "$JFROG_ENABLED" != "true" ]; then
+            echo "::notice::JFROG_URL is not set: building from Docker Hub; no push, Xray scan or signing."
+            {
+              echo "BASE_IMAGE=python:3.14-slim"
+              echo "IMAGE=$IMAGE_NAME:1.0.$BUILD_NUMBER"
+            } >> "$GITHUB_ENV"
+            exit 0
           fi
-          echo "REGISTRY=${JF_URL#https://}" >> "$GITHUB_ENV"
-          echo "IMAGE=${JF_URL#https://}/lab-docker/$IMAGE_NAME:1.0.$BUILD_NUMBER" >> "$GITHUB_ENV"
+          REGISTRY=${JF_URL#https://}
+          {
+            echo "REGISTRY=$REGISTRY"
+            echo "BASE_IMAGE=$REGISTRY/lab-docker/library/python:3.14-slim"
+            echo "IMAGE=$REGISTRY/lab-docker/$IMAGE_NAME:1.0.$BUILD_NUMBER"
+          } >> "$GITHUB_ENV"
 
       # Exchanges the GitHub OIDC token for a 5-minute JFrog token.
       # main gets lab-ci (push to dev), everything else lab-ci-readonly.
       - name: JFrog CLI (OIDC)
+        if: env.JFROG_ENABLED == 'true'
         id: jfrog
         uses: jfrog/setup-jfrog-cli@eb77328bc74211c6c65cada8d5f6c0e156a51440 # v4.11.0
         with:
@@ -118,15 +146,16 @@ jobs:
           disable-auto-evidence-collection: true
 
       - name: Docker login to JFrog
+        if: env.JFROG_ENABLED == 'true'
         env:
           OIDC_USER: ${{ steps.jfrog.outputs.oidc-user }}
           OIDC_TOKEN: ${{ steps.jfrog.outputs.oidc-token }}
         run: echo "$OIDC_TOKEN" | docker login "$REGISTRY" -u "$OIDC_USER" --password-stdin
 
-      - name: Build image (base image pulled through Artifactory)
+      - name: Build image (base image through Artifactory when JFrog is enabled)
         run: |
           docker build \
-            --build-arg BASE_IMAGE="$REGISTRY/lab-docker/library/python:3.14-slim" \
+            --build-arg BASE_IMAGE="$BASE_IMAGE" \
             --label org.opencontainers.image.source="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
             --label org.opencontainers.image.revision="$GITHUB_SHA" \
             -t "$IMAGE" app

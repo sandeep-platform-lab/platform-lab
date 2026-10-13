@@ -42,7 +42,7 @@ Workplace: Dev Box / Windows 365 · custom images · pools
 - [x] Artifactory housekeeping: cleanup policies, AQL, retention
 - [x] Promotion gates, Argo CD, Kyverno signature verification
 - [x] GitHub Enterprise: policies, audit log streaming, Entra SSO
-- [ ] Copilot administration and GitHub Advanced Security
+- [x] Copilot administration and GitHub Advanced Security
 - [x] Azure landing zone with Terraform: AKS, Key Vault, workload identity, Azure Policy
 - [ ] Developer workplace: Dev Box / Windows 365 images and pools
 - [ ] DAST with OWASP ZAP

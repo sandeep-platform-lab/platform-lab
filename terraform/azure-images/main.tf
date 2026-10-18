@@ -37,8 +37,10 @@ resource "azurerm_shared_image" "dev_workstation" {
   architecture        = "x64"
   specialized         = false # generalized with sysprep: every VM gets its own identity
 
-  # Built and used with Trusted Launch (secure boot + vTPM), the current baseline.
-  trusted_launch_supported = true
+  # Security type "TrustedLaunch": images built on a Trusted Launch VM carry vTPM/secure-boot state,
+  # which Azure only accepts into a TrustedLaunch definition (not "TrustedLaunchSupported").
+  # VMs created from it must use Trusted Launch too.
+  trusted_launch_enabled = true
 
   min_recommended_vcpu_count   = 2
   min_recommended_memory_in_gb = 8

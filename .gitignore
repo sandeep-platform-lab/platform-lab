@@ -33,3 +33,6 @@ sbom.spdx.json
 # Packer
 packer_cache/
 packer-manifest.json
+
+# Private documents (never pushed)
+*.local.pdf

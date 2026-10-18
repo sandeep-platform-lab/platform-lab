@@ -10,7 +10,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 Invoke-Expression ((New-Object Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 $env:Path += ";$env:ALLUSERSPROFILE\chocolatey\bin"
 
-$packages = @('git', 'vscode', 'python', 'azure-cli', 'terraform', 'kubernetes-cli')
+$packages = @('git', 'vscode', 'python', 'azure-cli', 'terraform', 'kubernetes-cli','nodejs-lts')
 foreach ($p in $packages) {
   Write-Output "== installing $p"
   choco install $p -y --no-progress

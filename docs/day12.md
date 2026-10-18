@@ -32,7 +32,14 @@ cd ~/workspace/terraform/azure-images
 terraform init -backend-config=../backend.hcl
 terraform apply -var subscription_id=$(az account show --query id -o tsv)
 ```
-Expected: 3 to add (resource group, gallery, image definition with Trusted Launch support).
+Expected: 3 to add (resource group, gallery, image definition with security type **TrustedLaunch**).
+
+**Lesson from the first build (18 Oct):** the definition was first created as `TrustedLaunchSupported`.
+The build ran 16 minutes and then failed at capture: *"contains TrustedLaunch … security data that
+cannot be used in image with 'TrustedLaunchSupported' security type"*. A disk from a Trusted Launch
+VM carries vTPM state, so the definition must be `TrustedLaunch` (`trusted_launch_enabled = true`).
+Changing it replaces the definition, so a failed version must be deleted first:
+`az sig image-version delete -g rg-platform-lab-images -r gal_platformlab -i dev-workstation-ws2025 -e 1.0.0`.
 
 ---
 

@@ -35,8 +35,12 @@ resource "azurerm_subnet" "aks_nodes" {
   name                 = "snet-aks-nodes"
   resource_group_name  = azurerm_resource_group.aks.name
   virtual_network_name = azurerm_virtual_network.lab.name
-  address_prefixes     = ["10.40.0.0/22"]       # nodes only: pods get overlay IPs, not VNet IPs
-  service_endpoints    = ["Microsoft.KeyVault"] # nodes reach Key Vault over the Azure backbone
+  address_prefixes     = ["10.40.0.0/22"] # nodes only: pods get overlay IPs, not VNet IPs
+
+  # Nodes reach Key Vault over the Azure backbone. (azurerm 5.x: a block; 4.x had service_endpoints = [...])
+  service_endpoint {
+    service = "Microsoft.KeyVault"
+  }
 }
 
 # ---------- Logging ----------

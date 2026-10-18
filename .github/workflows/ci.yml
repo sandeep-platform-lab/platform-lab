@@ -38,3 +38,31 @@ jobs:
 
       - name: Build image
         run: docker build -t lab-api:${{ github.sha }} .
+
+  # Every Terraform stack must still init and validate. Catches breaking provider upgrades (e.g. a
+  # Dependabot major bump) before merge. No backend, no credentials: syntax and schema only.
+  # Runs in the official Terraform image (pinned) because hashicorp/setup-terraform isn't on the
+  # enterprise's allowed-actions list.
+  terraform-validate:
+    name: terraform-validate
+    runs-on: ubuntu-latest
+    env:
+      TERRAFORM_IMAGE: hashicorp/terraform:1.16.4
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate all stacks
+        run: |
+          tf() { docker run --rm -v "$PWD:/w" -w "/w/$1" -e TF_IN_AUTOMATION=1 "$TERRAFORM_IMAGE" "${@:2}"; }
+          failed=0
+          for dir in terraform/*/; do
+            dir=${dir%/}
+            echo "::group::$dir"
+            if tf "$dir" init -backend=false -input=false -no-color >/dev/null && tf "$dir" validate -no-color; then
+              echo "ok: $dir"
+            else
+              echo "::error::terraform validate failed in $dir"; failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $failed

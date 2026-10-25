@@ -72,7 +72,7 @@ jobs:
 
       - name: Upload results to the Security tab
         if: always()
-        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           sarif_file: sarif
 
@@ -138,7 +138,7 @@ jobs:
       - name: JFrog CLI (OIDC)
         if: env.JFROG_ENABLED == 'true'
         id: jfrog
-        uses: jfrog/setup-jfrog-cli@1e584506871998c267b7c100c02628a5b9c81db6 # v5.3.0
+        uses: jfrog/setup-jfrog-cli@1a84ddcff2d475751d8392ef6d7ecb478a7cfe53 # v5.3.1
         with:
           oidc-provider-name: github-actions
           oidc-audience: jfrog-github

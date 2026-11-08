@@ -1,0 +1,5 @@
+# area: networking
+TICKET bf-08 · Team Shop · priority: critical
+"basket returns 502 Bad Gateway. Pods are Running AND Ready this time, endpoints exist,
+we checked! What is different from a 503?"
+Namespace: bf-08 · URL: curl -i -H 'Host: bf08.localhost' http://localhost:8080/

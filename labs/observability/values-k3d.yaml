@@ -1,0 +1,55 @@
+# kube-prometheus-stack on the local k3d cluster. Lab settings: small, short retention, UIs via Traefik.
+#   scripts/observability-install.sh
+fullnameOverride: kps
+
+# k3s runs etcd/scheduler/controller-manager inside one process without separate metrics endpoints.
+kubeEtcd: { enabled: false }
+kubeControllerManager: { enabled: false }
+kubeScheduler: { enabled: false }
+kubeProxy: { enabled: false }
+
+# Docker Desktop's root filesystem isn't a shared mount; node-exporter fails if it tries to mount /.
+prometheus-node-exporter:
+  hostRootFsMount: { enabled: false }
+
+prometheus:
+  ingress: { enabled: true, ingressClassName: traefik, hosts: [prometheus.localhost] }
+  prometheusSpec:
+    retention: 2d
+    # Pick up every PrometheusRule / ServiceMonitor in the cluster, not only ones labelled for this release.
+    ruleSelectorNilUsesHelmValues: false
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    resources: { requests: { cpu: 100m, memory: 512Mi }, limits: { memory: 1Gi } }
+
+alertmanager:
+  ingress: { enabled: true, ingressClassName: traefik, hosts: [alertmanager.localhost] }
+  config:
+    route:
+      receiver: platform-oncall
+      group_by: [alertname, namespace]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      routes:
+        - matchers: ['alertname = "Watchdog"']    # dead man's switch: route to a heartbeat service
+          receiver: "null"
+        - matchers: ['severity = "critical"']
+          receiver: platform-oncall-page
+          continue: false
+        - matchers: ['namespace =~ "bf-.*|team-.*"']  # app-team namespaces go to the owning team
+          receiver: app-teams
+    inhibit_rules:
+      - source_matchers: ['alertname = "KubeNodeNotReady"']
+        target_matchers: ['alertname =~ "KubePodNotReady|LabDeploymentReplicasMismatch"']
+        equal: [node]
+    receivers:
+      # Lab: no real endpoints. In production: PagerDuty/Opsgenie, Teams/Slack, email.
+      - name: "null"
+      - name: platform-oncall
+      - name: platform-oncall-page
+      - name: app-teams
+
+grafana:
+  adminPassword: admin            # lab only
+  ingress: { enabled: true, ingressClassName: traefik, hosts: [grafana.localhost] }

@@ -1,0 +1,6 @@
+# area: policy
+TICKET bf-18 · Team Analytics · priority: medium
+"kubectl apply -f /tmp/bf18.yaml fails with 'admission webhook ... denied the request'.
+We didn't change anything, the platform team did!"
+Namespace: bf-18. Make the workload compliant; don't change or exempt the policy.
+Edit /tmp/bf18.yaml (break.sh wrote it) and apply it again.

@@ -1,0 +1,9 @@
+Missing pods (not Pending) = the ReplicaSet was refused. Look at its events and at the quota:
+  kubectl -n bf-17 describe rs -l app=worker | sed -n '/Events/,$p'
+  kubectl -n bf-17 describe resourcequota
+Requests are what the quota counts, not real usage.
+Second trap: after you lower the requests, the rolling update itself needs quota for its surge pod.
+  kubectl -n bf-17 get rs     # new ReplicaSet stuck at 0? read its FailedCreate event
+How can a Deployment roll without extra headroom? (spec.strategy.rollingUpdate: maxSurge 0,
+and maxUnavailable 1 still deadlocks if you are already one pod short.) After repeated FailedCreate
+the ReplicaSet controller backs off for minutes, so a correct fix can look like it did nothing.

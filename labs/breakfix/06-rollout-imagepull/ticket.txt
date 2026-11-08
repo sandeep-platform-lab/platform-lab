@@ -1,0 +1,5 @@
+# area: releases
+TICKET bf-06 · Team Catalog · priority: medium
+"Our pipeline deployed catalog v2 and then failed at 'kubectl rollout status' with a timeout.
+Are customers affected? Please get us to a clean state; we'll re-release v2 tomorrow."
+Namespace: bf-06

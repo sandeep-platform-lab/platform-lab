@@ -1,0 +1,3 @@
+  kubectl -n bf-16 get role,rolebinding -o wide
+  kubectl -n bf-16 auth can-i --list --as=system:serviceaccount:bf-16:ci-deployer
+Which verbs does "set image" need (get + patch)? And "rollout status" (watch deployments, list replicasets)?

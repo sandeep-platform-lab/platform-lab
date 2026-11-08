@@ -1,0 +1,4 @@
+The FailedScheduling event lists a reason per node. One node has the right label but also a taint.
+  kubectl get nodes -L node.example.com/pool
+  kubectl describe node k3d-lab-agent-1 | grep -A2 Taints
+A taint repels pods unless they tolerate it; a label attracts them only if they ask for it.

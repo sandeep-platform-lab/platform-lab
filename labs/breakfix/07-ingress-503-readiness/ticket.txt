@@ -1,0 +1,5 @@
+# area: networking
+TICKET bf-07 · Team Shop · priority: critical
+"shop returns 503 Service Unavailable since this morning's deploy. The pods are Running!
+We added a health check, as the platform guidelines say."
+Namespace: bf-07 · URL: curl -i -H 'Host: bf07.localhost' http://localhost:8080/

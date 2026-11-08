@@ -1,0 +1,8 @@
+# area: security
+TICKET bf-16 · Team API · priority: medium
+"Our GitLab pipeline deploys with service account ci-deployer. Since the platform migration it fails:
+  Error from server (Forbidden): deployments.apps "api" is forbidden: User
+  "system:serviceaccount:bf-16:ci-deployer" cannot get resource "deployments" in API group "apps"
+The job runs: kubectl set image deployment/api api=nginx:1.29-alpine && kubectl rollout status deployment/api"
+Namespace: bf-16. Least privilege: the pipeline must not be able to read Secrets or delete things.
+Reproduce: kubectl -n bf-16 set image deployment/api api=nginx:1.29-alpine --as=system:serviceaccount:bf-16:ci-deployer

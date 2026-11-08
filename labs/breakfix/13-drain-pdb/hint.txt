@@ -1,0 +1,4 @@
+  kubectl drain NODE --ignore-daemonsets --delete-emptydir-data --timeout=60s
+  kubectl -n bf-13 get pdb matching-engine -o wide
+ALLOWED DISRUPTIONS = 0 means no voluntary eviction is ever possible. Is minAvailable equal to replicas?
+Two ways out: change the PDB, or add capacity first (scale up), then drain. Which is safer here?

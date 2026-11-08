@@ -1,0 +1,5 @@
+# area: scheduling
+TICKET bf-01 · Team Reporting · priority: medium
+"We deployed report-generator 30 minutes ago and the pod never starts. Same manifest worked
+on the old cluster. Can you have a look?"
+Namespace: bf-01

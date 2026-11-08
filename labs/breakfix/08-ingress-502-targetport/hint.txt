@@ -1,0 +1,4 @@
+502 = the proxy found a backend but the backend did not answer properly. Compare ports:
+  kubectl -n bf-08 get endpointslices -o wide
+  kubectl -n bf-08 get svc basket -o yaml | grep -A3 ports
+  kubectl -n bf-08 get pod -l app=basket -o jsonpath="{.items[0].spec.containers[0].ports}"

@@ -1,0 +1,4 @@
+No logs = the container never started. Look at the pod's status reason and events:
+  kubectl -n bf-04 get pods
+  kubectl -n bf-04 describe pod -l app=orders-api | sed -n '/Events/,$p'
+Then compare what the Deployment references with what the Secret actually contains (keys, not values).

@@ -1,0 +1,6 @@
+source "$BF_DIR/../lib.sh"
+k get networkpolicy default-deny-all >/dev/null 2>&1 || fail "default-deny-all removed"
+k exec deploy/frontend -- wget -qO- -T3 http://backend >/dev/null 2>&1 || fail "frontend still cannot reach http://backend"
+ok "frontend -> backend works by name"
+k exec deploy/frontend -- wget -qO- -T3 http://example.com >/dev/null 2>&1 && fail "frontend can reach the internet: egress is too open"
+ok "internet egress still blocked"

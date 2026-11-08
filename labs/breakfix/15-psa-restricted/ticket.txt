@@ -1,0 +1,5 @@
+# area: security
+TICKET bf-15 · Team Web · priority: medium
+"kubectl apply said 'deployment.apps/web created' (with some warning we ignored), but there are
+no pods at all. Not Pending, not crashing: nothing."
+Namespace: bf-15 (Pod Security: restricted, like OpenShift's restricted-v2 SCC). Don't relax the namespace.

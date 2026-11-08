@@ -1,0 +1,5 @@
+# area: workloads
+TICKET bf-04 · Team Orders · priority: high
+"orders-api is not Running, but it's not crashing either. There are no logs at all.
+We rotated the DB password last night."
+Namespace: bf-04

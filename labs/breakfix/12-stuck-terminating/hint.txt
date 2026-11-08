@@ -1,0 +1,4 @@
+Something must say "done" before the API server removes the object.
+  kubectl -n bf-12 get pod batch-runner -o jsonpath='{.metadata.deletionTimestamp} {.metadata.finalizers}'; echo
+Who owns that finalizer? Is that controller running? What would it have done (uploaded results)?
+Only then remove it, and say in the interview why --force --grace-period=0 isn't the first move.

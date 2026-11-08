@@ -1,0 +1,5 @@
+  kubectl describe node k3d-lab-agent-0 | sed -n '/Conditions/,/Addresses/p'
+  kubectl describe node k3d-lab-agent-0 | grep -A3 Taints
+"Kubelet stopped posting node status" = the control plane lost contact. Look at the taints it added
+and at the tolerationSeconds on the pods (kubectl -n bf-14 get pod -o yaml | grep -A3 unreachable).
+Then look at the machine itself.

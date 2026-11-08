@@ -1,0 +1,6 @@
+Two questions: which route answered, and why didn't ours?
+  kubectl get ingress -A        # look at CLASS and HOSTS; is there a catch-all (*)?
+  kubectl get ingressclass
+An Ingress whose class no controller owns is ignored silently: no ADDRESS in kubectl get ingress.
+Interview angle: ingress-nginx was retired in March 2026. What would you migrate to on AKS
+(app routing add-on, Gateway API) and how would you find all affected Ingresses?

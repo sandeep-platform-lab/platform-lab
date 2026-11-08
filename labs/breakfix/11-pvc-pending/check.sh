@@ -1,0 +1,5 @@
+source "$BF_DIR/../lib.sh"
+k rollout status sts/ledger-db --timeout=30s >/dev/null 2>&1 || fail "statefulset ledger-db not ready"
+ok "ledger-db ready"
+[[ "$(k get pvc data-ledger-db-0 -o jsonpath='{.status.phase}')" == Bound ]] || fail "PVC data-ledger-db-0 not Bound"
+ok "PVC data-ledger-db-0 Bound ($(k get pvc data-ledger-db-0 -o jsonpath='{.spec.storageClassName}'))"

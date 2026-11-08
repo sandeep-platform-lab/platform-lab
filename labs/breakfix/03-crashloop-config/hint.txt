@@ -1,0 +1,3 @@
+CrashLoopBackOff is a symptom: read why the container exits.
+  kubectl -n bf-03 logs deploy/payments-api --previous
+Then compare the path the app wants with the keys in the ConfigMap and how it's mounted.

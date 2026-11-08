@@ -1,0 +1,74 @@
+# GitLab CI/CD for a Helm-packaged app deployed by Argo CD (GitOps). Reference for discussion; runs on
+# gitlab.com if you push this repo there. Mirrors what this lab does with GitHub Actions.
+#
+# Flow: lint -> test -> scan -> build/push (signed) -> bump image tag in the GitOps repo (MR) -> Argo CD syncs.
+# The pipeline never talks to the cluster: Argo CD pulls. That's the audit trail a regulator likes.
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+stages: [lint, test, scan, build, deploy]
+
+variables:
+  IMAGE: $CI_REGISTRY_IMAGE/lab-api
+  CHART_DIR: deploy/chart
+
+.k8s-tools:
+  image: alpine/k8s:1.34.1          # pin; contains helm, kubectl, kubeconform
+
+helm-lint:
+  extends: .k8s-tools
+  stage: lint
+  script:
+    - helm lint $CHART_DIR
+    # Render with prod values and validate against the target Kubernetes version's schemas.
+    - helm template lab-api $CHART_DIR -f $CHART_DIR/values-prod.yaml
+        | kubeconform -strict -summary -kubernetes-version 1.34.0 -ignore-missing-schemas
+
+unit-tests:
+  image: python:3.13-slim
+  stage: test
+  script:
+    - pip install -r app/requirements-dev.txt
+    - pytest app/tests --junitxml=report.xml
+  artifacts:
+    reports: { junit: report.xml }
+
+iac-and-secrets-scan:
+  image: { name: aquasec/trivy:0.67.2, entrypoint: [""] }
+  stage: scan
+  script:
+    - trivy config --exit-code 1 --severity HIGH,CRITICAL $CHART_DIR
+    - trivy fs --scanners secret --exit-code 1 .
+
+build-push-sign:
+  stage: build
+  image: docker:28
+  services: [docker:28-dind]
+  id_tokens:
+    SIGSTORE_ID_TOKEN: { aud: sigstore }     # keyless signing with the job's OIDC identity
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - docker build -t $IMAGE:$CI_COMMIT_SHORT_SHA app
+    - docker push $IMAGE:$CI_COMMIT_SHORT_SHA
+    - apk add --no-cache cosign trivy
+    - trivy image --exit-code 1 --severity CRITICAL $IMAGE:$CI_COMMIT_SHORT_SHA
+    - DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' $IMAGE:$CI_COMMIT_SHORT_SHA)
+    - cosign sign --yes "$DIGEST"
+
+bump-gitops:
+  stage: deploy
+  image: alpine/git:2.49.1
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  environment: { name: dev }
+  script:
+    # Open an MR in the GitOps repo that changes the image tag. Prod promotion = another MR with approval.
+    - git clone "https://gitops-bot:${GITOPS_TOKEN}@gitlab.com/platform/gitops.git" && cd gitops
+    - git switch -c "lab-api-$CI_COMMIT_SHORT_SHA"
+    - sed -i "s/^  tag: .*/  tag: \"$CI_COMMIT_SHORT_SHA\"/" envs/dev/lab-api/values.yaml
+    - git commit -am "lab-api: deploy $CI_COMMIT_SHORT_SHA to dev" && git push -o merge_request.create origin HEAD

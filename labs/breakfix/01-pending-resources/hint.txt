@@ -1,0 +1,4 @@
+Pending = the scheduler could not place the pod. Read the FailedScheduling event, then compare
+the pod's requests with what a node can actually offer:
+  kubectl -n bf-01 describe pod -l app=report-generator | sed -n '/Events/,$p'
+  kubectl describe node k3d-lab-agent-0 | sed -n '/Allocatable/,/Events/p'

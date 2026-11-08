@@ -1,0 +1,4 @@
+First answer the impact question: how many pods serve traffic right now, old or new?
+  kubectl -n bf-06 get rs,pods -o wide
+  kubectl -n bf-06 get deploy catalog -o jsonpath='{.status.conditions}' | jq
+Then: kubectl rollout history / undo. Why didn't the old pods go away?

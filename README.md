@@ -32,6 +32,12 @@ Workplace: Dev Box / Windows 365 · custom images · pools
 | `k8s/azure/` | lab-api on AKS with workload identity and the Key Vault CSI driver |
 | `k8s/` | Local cluster config, Argo CD apps, Kyverno policies |
 | `scripts/` | Helper scripts |
+| `labs/breakfix/` | 19 break-fix scenarios for the local cluster (`scripts/breakfix.sh`) with tested solutions |
+| `labs/policy/` | ValidatingAdmissionPolicy (CEL) to compare with Kyverno |
+| `labs/observability/` | kube-prometheus-stack values, alert rules, Alertmanager routing |
+| `labs/ansible/` | Team onboarding playbook (namespace, quota, network policies, RBAC), AAP-ready |
+| `labs/operator/` | TeamSpace operator (kubebuilder, Go): guide and tested reference code |
+| `labs/gitlab-ci/` | GitLab CI/CD reference pipeline for a GitOps deployment |
 | `docs/` | Daily runbooks, decisions, interview notes |
 
 ## Roadmap
@@ -48,6 +54,11 @@ Workplace: Dev Box / Windows 365 · custom images · pools
 - [x] Azure landing zone with Terraform: AKS, Key Vault, workload identity, Azure Policy
 - [x] Developer workplace: golden image pipeline (Packer → Compute Gallery); Dev Box → Windows 365 concepts
 - [ ] DAST with OWASP ZAP
+- [ ] Troubleshooting dojo: pods, nodes, upgrades (day 14)
+- [ ] Troubleshooting dojo: connectivity, security, policy, storage (day 15)
+- [ ] Observability (Prometheus rules, Alertmanager) and Ansible automation (day 16)
+- [ ] OpenShift hands-on and a Go Operator (day 17)
+- [ ] Mock interview and whiteboard (day 18)
 
 ## Secrets
 

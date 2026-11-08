@@ -1,0 +1,4 @@
+Ready pods but an empty endpoint list means the Service does not select them.
+  kubectl -n bf-09 get endpointslices
+  kubectl -n bf-09 get svc inventory -o jsonpath="{.spec.selector}"; echo
+  kubectl -n bf-09 get pods --show-labels

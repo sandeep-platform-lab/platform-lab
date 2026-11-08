@@ -1,0 +1,4 @@
+Walk the path: Ingress -> Service -> EndpointSlices -> pods. Where does it stop?
+  kubectl -n bf-07 get pods,endpointslices
+  kubectl -n bf-07 describe pod -l app=shop | grep -A3 Readiness
+Running is not Ready. Ask the probe what it gets: kubectl -n bf-07 exec deploy/shop -- wget -qSO- localhost/healthz

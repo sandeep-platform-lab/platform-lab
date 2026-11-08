@@ -1,0 +1,6 @@
+# area: nodes
+TICKET bf-14 · ALERT KubeNodeNotReady · priority: critical
+"Alertmanager: node k3d-lab-agent-0 NotReady for 2 minutes."
+1. What is the impact right now, and in 5 minutes? (quotes runs 2 replicas in bf-14)
+2. Find the cause and bring the node back.
+Hint for this lab: a k3d node is a Docker container, so "the VM" is `docker ps -a`.

@@ -1,0 +1,4 @@
+# area: storage
+TICKET bf-11 · Team Ledger · priority: high
+"ledger-db (StatefulSet) was copied from our AKS repo. The pod has been Pending for an hour."
+Namespace: bf-11. The data is new, nothing to keep.

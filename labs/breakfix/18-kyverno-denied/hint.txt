@@ -1,0 +1,5 @@
+Read the whole denial message: it names the policy and each failed rule.
+  kubectl apply -f /tmp/bf18.yaml
+  kubectl get clusterpolicy bf18-workload-standards -o yaml | sed -n '/rules:/,$p'
+Note Kyverno checks the Deployment's pod template (auto-generated rules), so it fails at apply time.
+Bonus: switch a rule to Audit in a copy of the policy and read: kubectl -n bf-18 get policyreport -o wide

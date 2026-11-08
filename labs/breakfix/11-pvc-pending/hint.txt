@@ -1,0 +1,5 @@
+Follow pod -> PVC -> StorageClass:
+  kubectl -n bf-11 describe pod ledger-db-0 | sed -n '/Events/,$p'
+  kubectl -n bf-11 describe pvc | sed -n '/Events/,$p'
+  kubectl get storageclass
+Then try to fix the StatefulSet. Which fields are immutable, and what has to be recreated?

@@ -1,0 +1,5 @@
+No pods means the ReplicaSet could not create them. Look one level up:
+  kubectl -n bf-15 describe rs -l app=web | sed -n '/Events/,$p'
+  kubectl get ns bf-15 --show-labels
+Fix the workload: a non-root image (nginxinc/nginx-unprivileged listens on 8080) and a securityContext
+that satisfies "restricted". Dry-run first: kubectl apply --dry-run=server -f ...

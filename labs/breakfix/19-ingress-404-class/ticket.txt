@@ -1,0 +1,6 @@
+# area: networking
+TICKET bf-19 · Team Portal · priority: high
+"We moved portal from AKS to this cluster with the same manifests. The URL shows a generic
+'Welcome to nginx!' page instead of our Client Portal (on other clusters: 404 page not found).
+Service and pods are fine, we tested with port-forward."
+Namespace: bf-19 · URL: curl -i -H 'Host: bf19.localhost' http://localhost:8080/

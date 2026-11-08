@@ -1,0 +1,5 @@
+# area: networking
+TICKET bf-09 · Team Inventory · priority: high
+"inventory returns 503. Every pod is Running and 1/1 Ready. We only renamed our labels
+to the new naming standard (app: inventory-api)."
+Namespace: bf-09 · URL: curl -i -H 'Host: bf09.localhost' http://localhost:8080/

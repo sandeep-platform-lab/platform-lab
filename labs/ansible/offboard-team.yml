@@ -1,0 +1,14 @@
+# Reverse of onboard-team.yml. In AAP: a separate Job Template behind an Approval node.
+#   ansible-playbook labs/ansible/offboard-team.yml -e team=payments
+- name: Offboard an application team
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars: { team: demo }
+  tasks:
+    - name: Delete the team namespace
+      kubernetes.core.k8s:
+        state: absent
+        kind: Namespace
+        name: "team-{{ team }}"
+        wait: true

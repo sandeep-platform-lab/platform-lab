@@ -76,7 +76,7 @@ jobs:
 
       - name: Upload results to the Security tab
         if: always()
-        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           sarif_file: sarif
 
@@ -142,7 +142,7 @@ jobs:
       - name: JFrog CLI (OIDC)
         if: env.JFROG_ENABLED == 'true'
         id: jfrog
-        uses: jfrog/setup-jfrog-cli@6ed45ef1a24199bd4c94d3fd55a7e8cb7e45985d # v5.3.2
+        uses: jfrog/setup-jfrog-cli@ae385c7164244e984cd20a58674e5b57f53596d7 # v5.3.4
         with:
           oidc-provider-name: github-actions
           oidc-audience: jfrog-github
@@ -200,7 +200,7 @@ jobs:
         if: env.PUBLISH == 'true'
         run: jf build-scan "$BUILD_NAME" "$BUILD_NUMBER" --fail=true --vuln
 
-      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
         if: env.PUBLISH == 'true'
         with:
           cosign-release: v2.6.5

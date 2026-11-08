@@ -13,6 +13,11 @@ RUN /venv/bin/pip install --no-cache-dir -r requirements.txt \
 # ensurepip ships a complete pip wheel (with vendored urllib3, setuptools, ...); the app never
 # creates virtualenvs at runtime, so it goes too.
 FROM ${BASE_IMAGE} AS runtime-fs
+# Apply Debian security fixes now instead of waiting for the next python:*-slim rebuild (the Trivy
+# gate fails on fixable HIGH/CRITICAL, e.g. zlib CVE-2026-85091 in Nov 2026).
+RUN apt-get update \
+ && apt-get upgrade -y --no-install-recommends \
+ && rm -rf /var/lib/apt/lists/*
 RUN python -m pip uninstall -y pip \
  && rm -rf /usr/local/lib/python3.*/ensurepip \
  && useradd --uid 10001 --no-create-home app

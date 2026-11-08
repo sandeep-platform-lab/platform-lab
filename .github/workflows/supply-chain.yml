@@ -2,6 +2,10 @@ name: supply-chain
 
 # PRs:  scan everything, build the image, scan the image. JFrog access is read-only.
 # main: same, then push to JFrog with build-info, upload the SBOM, sign and attest the image.
+#
+# JFrog is switched by the JFROG_URL repository variable. The trial ended in Oct 2026 and the variable
+# is unset, so every run builds from Docker Hub and runs all scans and gates, and skips the JFrog
+# steps (push, build-info, Xray, signing). Set JFROG_URL again to re-enable them; nothing else changes.
 
 on:
   pull_request:

@@ -1,3 +1,7 @@
+# STATUS: inactive. The GitHub Enterprise Cloud trial ended in Nov 2026 and the organization is back on
+# GitHub Free; these resources can't be applied without an enterprise. Kept as reference (docs/day09.md).
+# CI still runs `terraform validate` on it.
+#
 # Enterprise-wide policies: set once here, inherited by every organization, and organizations can't
 # loosen them. Compare with terraform/github, which governs one organization and one repository.
 

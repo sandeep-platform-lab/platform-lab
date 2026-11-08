@@ -15,6 +15,17 @@ Infra: Terraform · Azure Policy · Key Vault · workload identity
 Workplace: Dev Box / Windows 365 · custom images · pools
 ```
 
+## Status (Nov 2026)
+
+The trials have ended. Their code stays in the repo as reference, and the pipelines still run and gate
+every change.
+
+| Part | State | What still runs | To switch it back on |
+|---|---|---|---|
+| JFrog Cloud (`terraform/jfrog`, push/build-info/Xray/sign in `supply-chain`, `promote`) | trial ended Oct 2026 | Build from Docker Hub, Gitleaks, Semgrep, Trivy, dependency review; `terraform validate` | New JFrog instance → `terraform apply` in `terraform/jfrog` → set repository variable `JFROG_URL` |
+| GitHub Enterprise Cloud (`terraform/github-enterprise`, audit log streaming, Entra SSO, Copilot Business) | trial ended Nov 2026; org back on GitHub Free | Repository ruleset, CODEOWNERS, `production` environment, code/secret scanning (free for public repos); `terraform validate` | Buy or trial Enterprise Cloud again, `terraform apply` in `terraform/github-enterprise` |
+| `terraform/azure-audit` (audit log WORM storage) | no new data after the trial | – | `terraform destroy` once the 30-day immutability period of the last blob has passed |
+
 ## Layout
 
 | Path | Contents |

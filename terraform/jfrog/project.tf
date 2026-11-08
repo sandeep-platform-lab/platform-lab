@@ -1,3 +1,7 @@
+# STATUS: inactive. The JFrog Cloud trial ended in Oct 2026. Kept as reference (docs/day03.md–day07.md);
+# re-apply against a new JFrog instance and set the JFROG_URL repository variable to switch CI back on.
+# CI still runs `terraform validate` on it.
+#
 # A JFrog Project groups repos, members, roles and (later) Xray policies for one team or product.
 
 resource "project_project" "lab" {

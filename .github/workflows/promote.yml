@@ -5,6 +5,9 @@ name: promote
 #
 # Gates, in order: approval (GitHub "production" environment) → signature from supply-chain on
 # main → Xray re-scan with today's vulnerability data → copy to prod → verify again in prod.
+#
+# Needs JFrog. The JFrog trial ended in Oct 2026, so the job is skipped while the JFROG_URL
+# repository variable is unset. To use it again: set JFROG_URL, apply terraform/jfrog (docs/day07.md).
 
 on:
   workflow_dispatch:
@@ -24,6 +27,8 @@ jobs:
   promote:
     name: promote
     runs-on: ubuntu-latest
+    # Skipped (before asking for approval) when JFrog isn't configured.
+    if: vars.JFROG_URL != ''
     # Pauses for approval. JFrog only grants the release group to jobs in this environment.
     environment: production
     permissions:

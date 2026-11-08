@@ -42,7 +42,9 @@ jobs:
   # Every Terraform stack must still init and validate. Catches breaking provider upgrades (e.g. a
   # Dependabot major bump) before merge. No backend, no credentials: syntax and schema only.
   # Runs in the official Terraform image (pinned) because hashicorp/setup-terraform isn't on the
-  # enterprise's allowed-actions list.
+  # allowed-actions list (set by terraform/github-enterprise while the Enterprise trial ran).
+  # terraform/jfrog and terraform/github-enterprise are kept as reference after their trials ended;
+  # validating them needs no licence or credentials, so they stay in the loop.
   terraform-validate:
     name: terraform-validate
     runs-on: ubuntu-latest
@@ -58,7 +60,13 @@ jobs:
           for dir in terraform/*/; do
             dir=${dir%/}
             echo "::group::$dir"
-            if tf "$dir" init -backend=false -input=false -no-color >/dev/null && tf "$dir" validate -no-color; then
+            # The public registry occasionally fails a provider download: retry init before failing.
+            ok=0
+            for attempt in 1 2 3; do
+              if tf "$dir" init -backend=false -input=false -no-color >/dev/null; then ok=1; break; fi
+              echo "init attempt $attempt failed, retrying"; sleep $((attempt * 10))
+            done
+            if [ "$ok" = 1 ] && tf "$dir" validate -no-color; then
               echo "ok: $dir"
             else
               echo "::error::terraform validate failed in $dir"; failed=1

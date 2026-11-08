@@ -1,0 +1,65 @@
+# Customer request "we need a namespace for our new team", automated.
+# Same result as the TeamSpace operator (labs/operator) and the same baseline you fixed by hand in
+# break-fix 10/15/16/17: restricted Pod Security, quota + defaults, default-deny with DNS, team RBAC.
+#
+#   ansible-playbook labs/ansible/onboard-team.yml -e team=payments -e cpu=2 -e memory=4Gi
+#
+# In AAP this becomes a Job Template: the -e values are a Survey, the kubeconfig/OpenShift token is a
+# Credential, kubernetes.core lives in the Execution Environment, and an Approval node in a Workflow
+# Template gates production.
+- name: Onboard an application team
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    team: demo
+    cpu: "2"
+    memory: 4Gi
+    admin_group: "{{ team }}-admins"
+    ns: "team-{{ team }}"
+    # Where the ingress controller runs. OpenShift: openshift-ingress (policy-group.network.openshift.io/ingress)
+    ingress_namespace: kube-system
+
+  tasks:
+    - name: Validate the request
+      ansible.builtin.assert:
+        that:
+          - team is match('^[a-z][a-z0-9-]{1,29}$')
+          - memory is match('^[0-9]+(Mi|Gi)$')
+        fail_msg: "team: lowercase letters, digits and dashes; memory like 512Mi or 4Gi"
+        quiet: true
+
+    - name: Namespace with Pod Security "restricted"
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ ns }}"
+            labels:
+              pod-security.kubernetes.io/enforce: restricted
+              platform.example.com/team: "{{ team }}"
+              platform.example.com/managed-by: ansible
+
+    - name: Baseline (quota, limit defaults, network policies, RBAC)
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ ns }}"
+        template: templates/team-baseline.yaml.j2
+
+    - name: Smoke test - the team group can deploy in its namespace only
+      ansible.builtin.command: >-
+        kubectl auth can-i create deployments.apps -n {{ item.ns }}
+        --as=smoke-test --as-group={{ admin_group }}
+      register: can_i
+      changed_when: false
+      failed_when: can_i.stdout != item.expect
+      loop:
+        - { ns: "{{ ns }}", expect: "yes" }
+        - { ns: default, expect: "no" }
+      loop_control: { label: "{{ item.ns }} -> {{ item.expect }}" }
+
+    - name: Report
+      ansible.builtin.debug:
+        msg: "{{ ns }} ready: quota cpu={{ cpu }} memory={{ memory }}, admins={{ admin_group }}"

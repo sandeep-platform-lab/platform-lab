@@ -1,0 +1,5 @@
+# area: scheduling
+TICKET bf-02 · Team Edge · priority: high
+"edge-proxy must run on the edge node pool (security requirement: only those nodes sit in the
+DMZ subnet). The platform team says the pool is ready, but our pod has been Pending all day."
+Namespace: bf-02. Keep the pod on the edge pool.

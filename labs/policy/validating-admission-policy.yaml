@@ -1,0 +1,30 @@
+# Built-in admission policy (no webhook, no extra controller): CEL rules evaluated by the API server.
+# GA since Kubernetes 1.30. Same intent as the Kyverno policy in breakfix 18, so you can compare.
+#   kubectl apply -f labs/policy/validating-admission-policy.yaml
+#   kubectl create ns policy-lab && kubectl label ns policy-lab policy-lab=true
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata: { name: workload-standards }
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [apps]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [deployments]
+  validations:
+    - expression: "has(object.spec.template.metadata.labels) && 'team' in object.spec.template.metadata.labels"
+      message: "Deployments need a 'team' label on the pod template."
+    - expression: "object.spec.template.spec.containers.all(c, c.image.contains(':') && !c.image.endsWith(':latest'))"
+      message: "Pin image tags; ':latest' or no tag is not allowed."
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata: { name: workload-standards }
+spec:
+  policyName: workload-standards
+  # Rollout like Kyverno: start with [Warn, Audit], read warnings and audit events, then switch to [Deny].
+  validationActions: [Warn, Audit]
+  matchResources:
+    namespaceSelector: { matchLabels: { policy-lab: "true" } }

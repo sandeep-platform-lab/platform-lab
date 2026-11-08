@@ -1,0 +1,6 @@
+# area: capacity
+TICKET bf-17 · Team Settlement · priority: high
+"Month-end batch: we scaled worker to 3 replicas, but only 2 pods exist. Nothing is Pending,
+no errors in our logs. We need 3 today."
+Namespace: bf-17. A quota increase needs a 2-week approval, so the quota stays as it is.
+Measured usage per worker: ~20m CPU, ~20Mi memory.

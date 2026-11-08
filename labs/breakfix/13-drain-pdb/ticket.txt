@@ -1,0 +1,7 @@
+# area: upgrades
+TICKET bf-13 · Platform maintenance · priority: medium
+"OS patching window is now. Drain the node named in namespace annotation breakfix/drain-node
+(also printed above) so it can be patched. The drain hangs. matching-engine must stay available."
+  kubectl get ns bf-13 -o jsonpath='{.metadata.annotations.breakfix/drain-node}'; echo
+Done = node drained (cordoned, no bf-13 pods on it) and matching-engine still has 2 available replicas.
+Run this scenario alone: draining also moves pods of other scenarios.

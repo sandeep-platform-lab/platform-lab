@@ -1,0 +1,5 @@
+# area: workloads
+TICKET bf-03 · Team Payments · priority: high
+"payments-api keeps restarting since we cleaned up our ConfigMap this morning. Nothing else
+changed. CrashLoopBackOff everywhere."
+Namespace: bf-03

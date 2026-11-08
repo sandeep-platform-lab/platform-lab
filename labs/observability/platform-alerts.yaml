@@ -1,0 +1,51 @@
+# Your own alert rules, next to the ones the chart ships. Test them with the break-fix scenarios:
+#   03 -> LabPodCrashLooping, 05 -> LabContainerOOMKilled, 06/17 -> LabDeploymentReplicasMismatch,
+#   13 -> LabPDBBlocksDrain (after 15m), 14 -> KubeNodeNotReady (from the chart)
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: platform-lab-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: platform-lab.workloads
+      rules:
+        - alert: LabPodCrashLooping
+          # The waiting reason flips CrashLoopBackOff -> Running -> Error -> ... and every flip resets "for".
+          # max_over_time keeps the signal steady across the flapping (the chart's own rule does the same).
+          expr: max_over_time(kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"}[5m]) >= 1
+          for: 2m
+          labels: { severity: warning }
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) is crash-looping"
+            runbook_url: https://github.com/sandeep-platform-lab/platform-lab/blob/main/labs/breakfix/SOLUTIONS.md
+
+        - alert: LabContainerOOMKilled
+          expr: |
+            increase(kube_pod_container_status_restarts_total[10m]) > 0
+            and on (namespace, pod, container)
+            kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
+          labels: { severity: warning }
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }} was OOMKilled: limit too small or a leak?"
+
+        - alert: LabDeploymentReplicasMismatch
+          expr: kube_deployment_spec_replicas != kube_deployment_status_replicas_available
+          for: 5m
+          labels: { severity: warning }
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.deployment }}: {{ $value }} available vs desired differs for 5m"
+
+    - name: platform-lab.platform
+      rules:
+        - alert: LabPDBBlocksDrain
+          expr: kube_poddisruptionbudget_status_pod_disruptions_allowed == 0
+            and on (namespace, poddisruptionbudget) kube_poddisruptionbudget_status_expected_pods > 0
+          for: 15m
+          labels: { severity: info }
+          annotations:
+            summary: "PDB {{ $labels.namespace }}/{{ $labels.poddisruptionbudget }} allows 0 disruptions: node upgrades will hang"
+
+        # Recording rule: precompute an expensive query that dashboards use a lot.
+        - record: namespace:container_memory_working_set_bytes:sum
+          expr: sum by (namespace) (container_memory_working_set_bytes{container!="", image!=""})

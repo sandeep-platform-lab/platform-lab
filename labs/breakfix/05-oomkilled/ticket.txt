@@ -1,0 +1,5 @@
+# area: workloads
+TICKET bf-05 · Team Market Data · priority: medium
+"cache-warmer restarts every few seconds. Logs show nothing useful, the app just disappears.
+It loads about 150 MB of reference data at start-up."
+Namespace: bf-05

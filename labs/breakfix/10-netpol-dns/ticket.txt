@@ -1,0 +1,6 @@
+# area: security
+TICKET bf-10 · Team Risk · priority: high
+"Security asked us to go default-deny. We added policies that explicitly allow frontend -> backend
+on port 80, but frontend still can't reach backend. Logs: wget: bad address 'backend'"
+Namespace: bf-10. Keep default-deny; allow only what is needed.
+  kubectl -n bf-10 logs deploy/frontend --tail=3

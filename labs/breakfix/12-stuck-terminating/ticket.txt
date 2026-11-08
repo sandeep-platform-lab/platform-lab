@@ -1,0 +1,5 @@
+# area: workloads
+TICKET bf-12 · Team Batch · priority: medium
+"Pod batch-runner has been Terminating for hours and our scheduler won't start the next run
+while it exists. We already tried 'kubectl delete pod' three times."
+Namespace: bf-12

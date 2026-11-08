@@ -1,0 +1,4 @@
+"bad address" is a name-resolution error, not a TCP one. Where does the pod send DNS queries?
+  kubectl -n bf-10 exec deploy/frontend -- cat /etc/resolv.conf
+  kubectl -n kube-system get svc kube-dns -o wide; kubectl -n kube-system get pods -l k8s-app=kube-dns --show-labels
+Test by IP to prove the theory: kubectl -n bf-10 exec deploy/frontend -- wget -qO- -T2 http://$(kubectl -n bf-10 get pod -l app=backend -o jsonpath='{.items[0].status.podIP}')
